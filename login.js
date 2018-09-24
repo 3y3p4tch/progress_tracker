@@ -4,4 +4,5 @@ $(function () {
 
 	// to set focus initially on ldap
 	$('#ldap').focus();
+	window.history.pushState(null, 'Invalid Credentials', '/dashboard.php');
 });

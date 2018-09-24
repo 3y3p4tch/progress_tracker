@@ -2,9 +2,19 @@ body {
 	margin: 0;
 }
 
+/* for clearing floats */
+.clearfix::after {
+    content: "";
+    clear: both;
+    display: table;
+}
+
 /* Add a black background color to the top navigation */
 #topnav {
-	position: sticky;
+    top: 0; left: 0;
+    box-sizing: border-box;
+    padding: 0 50px;
+    width: 100%;
     background-color: #333;
     overflow: hidden;
 }
@@ -31,14 +41,15 @@ body {
 
 /* The container <div> - needed to position the dropdown content */
 .dropdown {
+    /* position: relative; */
 	overflow: hidden;
 }
 
 /* Dropdown Content (Hidden by Default) */
 .dropdown-content {
 	display: none;
-	float: none;
-    position: fixed;
+    position: absolute;
+    /* right: 0; */
     background-color: #f1f1f1;
     min-width: 160px;
     box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
@@ -61,3 +72,38 @@ body {
 
 /* Change the background color of the dropdown button when the dropdown content is shown */
 .dropdown:hover {background-color: #3e8e41;}
+
+.right-side-bar {
+    background-color: #333;
+    color: #999;
+    font-family: 'abel';
+    position: fixed;
+    box-sizing: border-box;
+    left: 0;
+    height: calc(100% - 48.2px);
+    width: 350px;
+    border-right: 3px solid black;
+    padding: 10px;
+    overflow: auto;
+}
+
+.site {
+    background-color: white;
+    color: black;
+    font-family: 'josefin slab', serif;
+    font-size: 16px;
+    position: fixed;
+    box-sizing: border-box;
+    right: 0;
+    width: calc(100% - 350px);
+    height: calc(100% - 48.2px);
+    padding: 10px 30px 10px;
+    overflow: auto;
+}
+
+textarea {
+    outline: none;
+    border: 1px solid black;
+    border-radius: 1px;
+    resize: none;
+}

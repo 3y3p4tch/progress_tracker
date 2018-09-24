@@ -76,9 +76,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 	<div id='login'>
 		<form action="<?php echo htmlspecialchars($_SERVER["PHP_SELF"]);?>" method="post">
 			<span>Username</span>
-			<input type="text" placeholder="CSE LDAP" name="ldap" id="ldap" size="15" pattern="[A-Za-z_0-9]*" required><br>
+			<input type="text" placeholder="CSE LDAP" name="ldap" id="ldap" size="15" autocomplete='username' pattern="[A-Za-z_0-9]*" oninput='check_username(this)' required><br>
 			<span>Password</span>
-			<input type="password" placeholder="Password" name="passwd" id="passwd" size="15" required><br>
+			<input type="password" placeholder="Password" name="passwd" id="passwd" autocomplete='current-password' size="15" oninput='check_password(this)' required><br>
 			<label class='container'><input type="checkbox" checked="checked" name="remember_me"><span class='checkmark'></span><span style='display: inline-block;'>Remember Me</span></label>
 			<input type="submit" value="Login" style="margin: 0; padding: 10px; position: relative; background-color: #ffa500; border: 1px solid red; width: 100%; cursor: pointer;">
 		</form>
