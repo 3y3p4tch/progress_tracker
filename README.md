@@ -1,5 +1,13 @@
 # Progress Tracker
 
+# `To be done for Project inspection before 24th Oct.`
+> Create a session that can be activated by the prof from the web and accordingly availiable to the students.  
+> The session also has some checkpoints.  
+> The session ends automatically according to the time given by the prof.  
+> Display output.  
+> Have a clear idea of what to do ahead in the project and how to do it.  
+***
+***
 ## Things completed:
 ### Web
 > &#10003; login page completed successfully
@@ -15,7 +23,8 @@
 
 ### Web
 
-> `customize sidebar, topbar and functionalities`
+> `customize sidebar, topbar and functionalities`  
+
 * User authentication using SQL in web
 * Work on `LaTeX bug` in text editor
 * Add facility for previous assignment results
