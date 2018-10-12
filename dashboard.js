@@ -1,38 +1,118 @@
 $(function () {
-	// For configuring Latex
-	MathJax.Hub.Config({
-		tex2jax: {
-			inlineMath: [['$', '$'], ['\\(', '\\)']], // for allowing use of $
-			processEscapes: true, // for interpreting \$ as literal $
-			preview: '[math]', // text to display while processing
-			skipTags: ["script", "noscript", "style", "pre", "code"], //for ignoring these tags
-			processClass: 'latex' //for processing textarea if it contains class latex
+	
+	var iframe = document.getElementsByTagName('iframe')[0];
+
+	// For iframe editable
+	iframe.contentDocument.body.contentEditable = "true";
+	// For integrating mathjax
+	var math_script = iframe.contentDocument.createElement('script');
+	math_script.type = 'text/javascript';
+	math_script.src = 'https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js?config=TeX-MML-AM_CHTML';
+	math_script.async = true;
+	iframe.contentDocument.head.appendChild(math_script);
+	math_script.onload = function () {
+			// For configuring Latex
+			iframe.contentWindow.MathJax.Hub.Config({
+				tex2jax: {
+					inlineMath: [['$', '$']], // for allowing use of $
+					processEscapes: true, // for interpreting \$ as literal $
+					preview: '[math]', // text to display while processing
+					skipTags: ["script", "noscript", "style", "pre", "code"], //for ignoring these tags
+				},
+				showProcessingMessages: false,
+				messageStyle: 'none',
+				jax: ['input/TeX', 'output/SVG']
+				// Use MathJax.Hub.Typeset() to re-run typesetting
+			});
+	};
+	function removeTypeset() {
+		var HTML = iframe.contentWindow.MathJax.HTML, jax = iframe.contentWindow.MathJax.Hub.getAllJax();
+		for (var i = 0, m = jax.length; i < m; i++) {
+			var script = jax[i].SourceElement(), tex = jax[i].originalText;
+			if (script.type.match(/display/)) {tex = "\\[" + tex + "\\]"} else {tex = "$" + tex + "$"}
+			jax[i].Remove();
+			var preview = script.previousSibling;
+			if (preview && preview.className === "MathJax_Preview") {
+				preview.parentNode.removeChild(preview);
+			}
+			preview = HTML.Element("span",{className: "MathJax_Preview"},[tex]);
+			script.parentNode.insertBefore(preview,script);
 		}
-		// Use MathJax.Hub.Typeset() to re-run typesetting
+	}
+	var mathjax_show = false;
+	$('#preview_latex').on('click', function () {
+		if (mathjax_show) {
+			mathjax_show = false;
+			$('#preview_latex').css({ 'background': 'springgreen', 'color': 'black' });
+			$('#preview_latex').html('Preview LaTeX');
+		}
+		else {
+			mathjax_show = true;
+			$('#preview_latex').css({ 'background': '#F44336', 'color': 'floralwhite' });
+			$('#preview_latex').html('View Code');
+		}
+		showTypeset(mathjax_show);
 	});
 
-	// For preview of the code above.
-	$("#details").bind('keyup', function (e) {
-		// console.log(e.which);
-		var str = $(this).val();
-		$("#preview_latex").text(str);
-		if ($("#preview_latex").css('display') != 'none')
-			MathJax.Hub.Typeset();
-	});
-
-	// for textarea resize
-	var textarea = document.getElementById('details');
+	function showTypeset(show) {
+		show ? iframe.contentWindow.MathJax.Hub.Typeset() : iframe.contentWindow.MathJax.Hub.Queue(removeTypeset);
+	}
+	
+	var font_css = iframe.contentDocument.createElement('link');
+	font_css.rel = 'stylesheet';
+	font_css.href = 'https://fonts.googleapis.com/css?family=Quicksand:400,700';
+	iframe.contentDocument.head.appendChild(font_css);
+	iframe.contentDocument.body.style.fontFamily = 'quicksand';
+	
+	// for iframe resize
+	iframe.contentDocument.body.style.overflowY = 'hidden';
+	iframe.contentDocument.body.style.whiteSpace = 'pre-wrap';
+	iframe.contentDocument.body.style.wordWrap = 'break-word';
+	iframe.contentDocument.execCommand('styleWithCSS', false, false);
+	iframe.contentDocument.body.spellcheck = false;
 	function resize() {
-		console.log('hi');
-		textarea.style.height = 'auto';
-		textarea.style.height = textarea.scrollHeight + 'px';
+		iframe.height = 'auto';
+		iframe.height = iframe.contentDocument.body.scrollHeight + 'px';
 	}
 	function delayedResize() {
 		setTimeout(resize, 0);
 	}
-	textarea.addEventListener('cut', delayedResize);
-	textarea.addEventListener('keydown', delayedResize);
-	textarea.addEventListener('drop', delayedResize);
-	textarea.addEventListener('paste', delayedResize);
+	iframe.contentDocument.body.addEventListener('cut', delayedResize);
+	iframe.contentDocument.body.addEventListener('keydown', delayedResize);
+	iframe.contentDocument.body.addEventListener('drop', delayedResize);
+	iframe.contentDocument.body.addEventListener('paste', delayedResize);
 
+	// For editor buttons
+	var commands = ['bold', 'italic', 'strikethrough', 'underline', 'insertOrderedList', 'insertUnorderedList', 'indent', 'outdent', 'superscript', 'subscript', 'justifyFull', 'justifyLeft', 'justifyRight', 'justifyCenter'];
+	function click_events(command) {
+		return function () {
+			iframe.contentDocument.execCommand(command, false, null);
+			iframe.contentWindow.document.body.focus();
+			check_formatting();
+		}
+	}
+	for (var i = 0; i < commands.length; i++) {
+		$('.' + commands[i]).on('click', click_events(commands[i]));
+	}
+
+	// For changing colors of editor bar
+	function check_formatting() {
+		var commands = ['bold', 'italic', 'strikethrough', 'underline', 'insertOrderedList', 'insertUnorderedList', 'indent', 'outdent', 'superscript', 'subscript', 'justifyFull', 'justifyLeft', 'justifyRight', 'justifyCenter'];
+		for (var i = 0; i < commands.length; i++) {
+			var elements = document.getElementsByClassName(commands[i]);
+			if (iframe.contentDocument.queryCommandState(commands[i])) {
+				for (var j = 0; j < elements.length; j++) {
+					elements[j].style.color = 'deepskyblue';
+				}
+			}
+			else for (var j = 0; j < elements.length; j++) {
+				elements[j].style.color = 'black';
+			}
+		}
+	}
+	// To change colors of editor bar
+	var things_to_check_for_editor = ['keydown', 'cut', 'paste', 'drop', 'click'];
+	for (var i = 0; i < things_to_check_for_editor.length; i++) {
+		iframe.contentDocument.body.addEventListener(things_to_check_for_editor[i], function () { setTimeout(check_formatting, 0) });
+	}
 })

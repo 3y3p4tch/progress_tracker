@@ -76,7 +76,7 @@ body {
 .right-side-bar {
     background-color: #333;
     color: #999;
-    font-family: 'abel';
+    font-family: 'josefin slab', serif;
     position: fixed;
     box-sizing: border-box;
     left: 0;
@@ -101,9 +101,40 @@ body {
     overflow: auto;
 }
 
-textarea {
-    outline: none;
-    border: 1px solid black;
+iframe {
+    font-family: 'quicksand';
+    width: 100%;
+    border: none;
     border-radius: 1px;
-    resize: none;
+}
+
+#editor_topbar {
+    list-style: none;
+    padding: 0;
+    box-sizing: inherit;
+    border-top: 4px solid black;
+    margin: 0;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 1px 1px rgba(0,0,0,0.16);
+    border-radius: inherit;
+}
+
+#editor_topbar > li {
+    float: left;
+    margin: 0 2px;
+}
+#editor_topbar > li > i {
+    margin: 12px;
+}
+#editor_topbar > li:hover {
+    background: #eee;
+    cursor: pointer;
+}
+
+#preview_latex {
+    display: block;
+    background: springgreen;
+    float: right;
+    padding: 12px;
+    cursor: pointer;
+    user-select: none;
 }

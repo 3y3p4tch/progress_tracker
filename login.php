@@ -1,6 +1,7 @@
 <!doctype <!DOCTYPE html>
 
 <?php
+ini_set('session.cookie_domain', 'localhost'); //set to the server domain to use co-domain access
 function customError($errno, $errstr, $err_f, $err_l) {
   echo "<b>Error:</b> [$errno] $errstr $err_f $err_l";
 }
@@ -8,50 +9,40 @@ function customError($errno, $errstr, $err_f, $err_l) {
 //set error handler
 set_error_handler("customError");
 // //////////////////////////////*******To be removed when login.php is complete*******///////////////////////////////////////////////////////
-/* These are our valid ldap and passwords */
+/* These are our valid username and passwords */
 $user = '170050059';
 $pass = 'pass';
 
-if (isset($_COOKIE['ldap']) && isset($_COOKIE['passwd'])) {
-	if (($_COOKIE['ldap'] == $user) && ($_COOKIE['passwd'] == md5($pass))) {
+session_start();
+if (isset($_SESSION['username'])) {
+	header('location: dashboard.php');
+	exit();
+}
+else if (isset($_COOKIE['username']) && isset($_COOKIE['passwd'])) {
+	if (($_COOKIE['username'] == $user) && ($_COOKIE['passwd'] == md5($pass))) {
+		$_SESSION['username'] = $_COOKIE['username'];
 		header('location: dashboard.php');
 		exit();
 	}
 }
 
-session_start();
-if ($_SERVER["REQUEST_METHOD"] == "GET") {
-	if (isset($_GET['location']) && $_GET['location'] != '') {
-	$location = urldecode($_GET['location']);
-	}
-	else {
-		$location = 'dashboard.php';
-	}
-	$_SESSION['location'] = $location;
-}
-
 
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
-	if (isset($_POST['ldap']) && isset($_POST['passwd'])) {
-		if (($_POST['ldap'] == $user) && ($_POST['passwd'] == $pass)) {    
+	if (isset($_POST['username']) && isset($_POST['passwd'])) {
+		if (($_POST['username'] == $user) && ($_POST['passwd'] == $pass)) {    
 			
 			if (isset($_POST['remember_me'])) {
 				/* Set cookie to last 1 year */
-				setcookie('ldap', $_POST['ldap'], time()+86400*365);
+				setcookie('username', $_POST['username'], time()+86400*365);
 				setcookie('passwd', md5($_POST['passwd']), time()+ 86400*365);
-			
-			} else {
-				/* Cookie expires when browser closes */
-				setcookie('ldap', $_POST['ldap'], false);
-				setcookie('passwd', md5($_POST['passwd']), false);
 			}
-			header('Location: '.$_SESSION['location']);
-			unset($_SESSION['location']);
+			$_SESSION['username'] = $_POST['username'];
+			header('Location: dashboard.php');
 			exit();
 			
 		} else {
-			echo 'Username/Password Invalid';
+			echo '<script>alert("Invalid username or password")</script>';
 		}
 	}
 }
@@ -76,7 +67,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 	<div id='login'>
 		<form action="<?php echo htmlspecialchars($_SERVER["PHP_SELF"]);?>" method="post">
 			<span>Username</span>
-			<input type="text" placeholder="CSE LDAP" name="ldap" id="ldap" size="15" autocomplete='username' pattern="[A-Za-z_0-9]*" oninput='check_username(this)' required><br>
+			<input type="text" placeholder="CSE LDAP" name="username" id="username" size="15" autocomplete='username' pattern="[A-Za-z_0-9]*" oninput='check_username(this)' required><br>
 			<span>Password</span>
 			<input type="password" placeholder="Password" name="passwd" id="passwd" autocomplete='current-password' size="15" oninput='check_password(this)' required><br>
 			<label class='container'><input type="checkbox" checked="checked" name="remember_me"><span class='checkmark'></span><span style='display: inline-block;'>Remember Me</span></label>
