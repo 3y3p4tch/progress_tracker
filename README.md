@@ -1,37 +1,41 @@
-# Project Tracker
+# Progress Tracker
 
 ## Things completed:
-
+### Web
 > &#10003; login page completed successfully
->
-> &#10003; use cookies for login
+> 
+> &#10003; `WYSIWYG` text editor added (basic)
 
 ***
+### Android
+> &#10003; User login and *remember me* added
 
+***
 ## Things to do:
 
-* <b>learn SQL `(or possibly any other database language)`<b>  
-`{to be done by Yash}`
+### Web
+
+> `customize sidebar, topbar and functionalities`
+* User authentication using SQL in web
+* Work on `LaTeX bug` in text editor
+* Add facility for previous assignment results
+* Add webpage to track progress `(Graphs, pie charts etc.)`
+* Add checkboxes, radio buttons and questions with input text
 
 ***
+### Android
 
-### In ***login.php***:
-
-> * for invalid login, display an error message
-> * create databases for users ```(prof)``` containing   
-> their `usernames` and `passwords` and read them
+* Display the iframe html content downloaded from server (`problem statement`)
+* `Register User`
+***
 
 #### Possible extra things:
-
-> * add facility for user registeration
-* customise `index.php` (*empty for now*)
+* Parse text editor data to prevent `script injection`
+* Background for login page in `android`
+* use `SVG` for graphs and charts
 
 ***
 
-### In rest of the project:
-* use database for `students` and for `prof login`
-  
-* use graphs, pie charts, bar graphs to show progress (will use `svg` for that)
 
 [login page](https://www.cse.iitb.ac.in/~sauravyad/progress_tracker/login.php) ``{username: 170050059, password: pass}`` are the credentials for now  
 [dashboard](https://www.cse.iitb.ac.in/~sauravyad/progress_tracker/dashboard.php)
