@@ -11,32 +11,32 @@ $(function () {
 	math_script.async = true;
 	iframe.contentDocument.head.appendChild(math_script);
 	math_script.onload = function () {
-			// For configuring Latex
-			iframe.contentWindow.MathJax.Hub.Config({
-				tex2jax: {
-					inlineMath: [['$', '$']], // for allowing use of $
-					processEscapes: true, // for interpreting \$ as literal $
-					preview: '[math]', // text to display while processing
-					skipTags: ["script", "noscript", "style", "pre", "code"], //for ignoring these tags
-				},
-				showProcessingMessages: false,
-				messageStyle: 'none',
-				jax: ['input/TeX', 'output/SVG']
-				// Use MathJax.Hub.Typeset() to re-run typesetting
-			});
+		// For configuring Latex
+		iframe.contentWindow.MathJax.Hub.Config({
+			tex2jax: {
+				inlineMath: [['$', '$']], // for allowing use of $
+				processEscapes: true, // for interpreting \$ as literal $
+				preview: '[math]', // text to display while processing
+				skipTags: ["script", "noscript", "style", "pre", "code"], //for ignoring these tags
+			},
+			showProcessingMessages: false,
+			messageStyle: 'none',
+			jax: ['input/TeX', 'output/SVG']
+			// Use MathJax.Hub.Typeset() to re-run typesetting
+		});
 	};
 	function removeTypeset() {
 		var HTML = iframe.contentWindow.MathJax.HTML, jax = iframe.contentWindow.MathJax.Hub.getAllJax();
 		for (var i = 0, m = jax.length; i < m; i++) {
 			var script = jax[i].SourceElement(), tex = jax[i].originalText;
-			if (script.type.match(/display/)) {tex = "\\[" + tex + "\\]"} else {tex = "$" + tex + "$"}
+			if (script.type.match(/display/)) { tex = "\\[" + tex + "\\]" } else { tex = "$" + tex + "$" }
 			jax[i].Remove();
 			var preview = script.previousSibling;
 			if (preview && preview.className === "MathJax_Preview") {
 				preview.parentNode.removeChild(preview);
 			}
-			preview = HTML.Element("span",{className: "MathJax_Preview"},[tex]);
-			script.parentNode.insertBefore(preview,script);
+			preview = HTML.Element("span", { className: "MathJax_Preview" }, [tex]);
+			script.parentNode.insertBefore(preview, script);
 		}
 	}
 	var mathjax_show = false;
@@ -71,23 +71,47 @@ $(function () {
 	iframe.contentDocument.execCommand('styleWithCSS', false, false);
 	iframe.contentDocument.body.spellcheck = false;
 	function resize() {
+		var top = document.getElementById('site').scrollTop;
+		var left = document.getElementById('site').scrollLeft;
 		iframe.height = 'auto';
 		iframe.height = iframe.contentDocument.body.scrollHeight + 'px';
+		document.getElementById('site').scrollTo(left, top);
 	}
 	function delayedResize() {
 		setTimeout(resize, 0);
 	}
 	iframe.contentDocument.body.addEventListener('cut', delayedResize);
 	iframe.contentDocument.body.addEventListener('keydown', delayedResize);
-	iframe.contentDocument.body.addEventListener('drop', delayedResize);
-	iframe.contentDocument.body.addEventListener('paste', delayedResize);
+	iframe.contentDocument.body.addEventListener('drop', function (e) {
+		var data = e.dataTransfer.getData("text/plain");
+		iframe.contentDocument.body.focus();
+		console.log(iframe.contentDocument.execCommand('insertText', false, data)); 
+		e.preventDefault();
+		delayedResize();
+	});
+
+	iframe.contentDocument.body.addEventListener('paste', function (e) {
+		e.preventDefault();
+
+		var pastedText = undefined;
+		if (window.clipboardData && window.clipboardData.getData) { // IE
+			pastedText = window.clipboardData.getData('Text');
+		} else if (e.clipboardData && e.clipboardData.getData) {
+			pastedText = e.clipboardData.getData('text/plain');
+		}
+		// pastedText = pastedText.replace(/[^\x00-\x7F]/gm, "");
+		prevent_paste = false;
+		iframe.contentDocument.execCommand('insertText', false, pastedText);
+		delayedResize();
+		return true;
+	});
 
 	// For editor buttons
 	var commands = ['bold', 'italic', 'strikethrough', 'underline', 'insertOrderedList', 'insertUnorderedList', 'indent', 'outdent', 'superscript', 'subscript', 'justifyFull', 'justifyLeft', 'justifyRight', 'justifyCenter'];
 	function click_events(command) {
 		return function () {
 			iframe.contentDocument.execCommand(command, false, null);
-			iframe.contentWindow.document.body.focus();
+			// iframe.contentWindow.document.body.focus();
 			check_formatting();
 		}
 	}

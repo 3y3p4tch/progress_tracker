@@ -73,7 +73,7 @@ body {
 /* Change the background color of the dropdown button when the dropdown content is shown */
 .dropdown:hover {background-color: #3e8e41;}
 
-.right-side-bar {
+#right-side-bar {
     background-color: #333;
     color: #999;
     font-family: 'josefin slab', serif;
@@ -87,7 +87,7 @@ body {
     overflow: auto;
 }
 
-.site {
+#site {
     background-color: white;
     color: black;
     font-family: 'josefin slab', serif;

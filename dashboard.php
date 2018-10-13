@@ -69,10 +69,10 @@ if(isset($_POST['details'])) {
 		<a href="#contact">Contact</a>
 		<a href="#about">About</a>
 	</div>
-	<div class='right-side-bar'>
+	<div id='right-side-bar'>
 		<p>Hi there, my name is Saurav Yadav. This right here is the left sidebar.</p>
 	</div>
-	<div class='site'>
+	<div id='site'>
 		<p>This right here is the main site.</p>
 		<h2>Assignment:</h2>
 		<div style='width: 100%'>
