@@ -1,7 +1,6 @@
 <!doctype <!DOCTYPE html>
 
 <?php
-ini_set('session.cookie_domain', 'localhost'); //set to the server domain to use co-domain access
 function customError($errno, $errstr, $err_f, $err_l) {
   echo "<b>Error:</b> [$errno] $errstr $err_f $err_l";
 }
@@ -10,34 +9,58 @@ function customError($errno, $errstr, $err_f, $err_l) {
 set_error_handler("customError");
 // //////////////////////////////*******To be removed when login.php is complete*******///////////////////////////////////////////////////////
 /* These are our valid username and passwords */
-$user = '170050059';
-$pass = 'pass';
+
+function sql_query ($user, $passwd) {
+	if ($user != '' && $passwd != '') {
+		$conn = sqlsrv_connect('LAPTOP-DJ46JC9S', array( "Database"=>"voodle", "UID"=>"voodle", "PWD"=>"KanekiK" ));
+		if( $conn === false ) {
+			return false;
+		}
+		$sql = "SELECT username, passwd FROM instructors WHERE username = ? AND passwd = ?";
+		$stmt = sqlsrv_query($conn, $sql, array($user, $passwd));
+		if( $stmt === false ) {
+			return false;
+		}
+		if( sqlsrv_fetch( $stmt ) === false) {
+			return false;
+		}
+		$sql_username = sqlsrv_get_field($stmt, 0);
+		$sql_passwd = sqlsrv_get_field($stmt, 1);
+		if ($user == $sql_username && $passwd == $sql_passwd) {
+			return true;
+		}
+		return false;
+	}
+}
 
 session_start();
 if (isset($_SESSION['username'])) {
 	header('location: dashboard.php');
 	exit();
 }
-else if (isset($_COOKIE['username']) && isset($_COOKIE['passwd'])) {
-	if (($_COOKIE['username'] == $user) && ($_COOKIE['passwd'] == md5($pass))) {
-		$_SESSION['username'] = $_COOKIE['username'];
-		header('location: dashboard.php');
+
+else if (isset($_COOKIE['username']) && isset($_COOKIE['passwd'])) {// for authentication
+	$user = $_COOKIE['username']; $passwd = $_COOKIE['passwd'];
+	if (sql_query($user, $passwd)) {
+		$_SESSION['username'] = $user;
+		$_SESSION['passwd'] = $passwd;
+		header('Location: dashboard.php');
 		exit();
 	}
 }
 
 
-
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
 	if (isset($_POST['username']) && isset($_POST['passwd'])) {
-		if (($_POST['username'] == $user) && ($_POST['passwd'] == $pass)) {    
+		$user = $_POST['username']; $passwd = md5($_POST['passwd']);
+		if (sql_query($user, $passwd)) {    
 			
 			if (isset($_POST['remember_me'])) {
 				/* Set cookie to last 1 year */
-				setcookie('username', $_POST['username'], time()+86400*365);
-				setcookie('passwd', md5($_POST['passwd']), time()+ 86400*365);
+				setcookie('username', $user, time()+86400*365);
+				setcookie('passwd', $passwd, time()+ 86400*365);
 			}
-			$_SESSION['username'] = $_POST['username'];
+			$_SESSION['username'] = $user;
 			header('Location: dashboard.php');
 			exit();
 			
