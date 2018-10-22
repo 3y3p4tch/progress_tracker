@@ -1,5 +1,3 @@
-<!doctype html>
-
 <?php
 // for logout
 if (isset($_GET['logout']) && $_GET['logout'] === 'true') {
@@ -13,17 +11,33 @@ if (isset($_GET['logout']) && $_GET['logout'] === 'true') {
 }
 
 session_start();
-if (!isset($_SESSION['username'])) {
+if (!isset($_SESSION['username']) || !isset($_SESSION['userID'])) {
 	header('Location: login.php');
 	exit();
 }
 
-if(isset($_POST['details'])) {
-	echo $_POST['details'];
+if(isset($_POST['update_sidebar'])) {
+	$client_time = $_POST['update_sidebar'];
+	$conn = sqlsrv_connect('LAPTOP-DJ46JC9S', array( "Database"=>"voodle", "UID"=>"voodle", "PWD"=>"KanekiK" ));
+	if ($conn === false) {
+		echo json_encode(array('message' => "Server not Reachable"));
+		exit();
+	}
+	$sql = "SELECT session_name, start_time, duration FROM sessions_ INNER JOIN instructors WHERE userID = ?";
+	$stmt = sqlsrv_query($conn, $sql, array($_SESSION['userID']));
+	if ($stmt === false) {
+		echo json_encode(array('message' => "Server Error"));
+		exit();
+	}
+	$name = sqlsrv_get_field($stmt, 0);
+	$start = sqlsrv_get_field($stmt, 1);
+	$duration = sqlsrv_get_field($stmt, 2);
+	echo json_encode(array('name' => $name, 'start' => $start, 'duration' => $duration, 'now' => time()));
 	exit();
 }
 
 ?>
+<!doctype html>
 <html>
 <head>
 	<meta charset="utf-8" />
@@ -59,9 +73,39 @@ if(isset($_POST['details'])) {
 				<li>Kaneki Ken</li>
 			</ul>
 		</div>
+		<!-- For updating sidebar every 2 seconds -->
+		<script>
+		async function update_sidebar () {
+			var xhttp = new XMLHttpRequest();
+			xhttp.onreadystatechange = function() {
+				if (this.readyState == 4 && this.status == 200) {
+					var response = JSON.parse(this.responseText);
+					if (response['message'] == '') {
+						// response['name'], response['start'], response['duration']
+						// if (time() - response['start'] <= response['duration']){
+						// 	<i class="fas fa-angle-down"></i>response['name']</span>
+						// }
+						// else
+						// echo("Yash Parmar");
+					}
+					// else console.log(response['message']);
+				}
+			};
+			xhttp.open("POST", "<?php echo $_SERVER['PHP_SELF']?>" , true);
+			xhttp.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+			xhttp.send("update_sidebar");
+			setTimeout(update_sidebar, 2000);
+		}
+		update_sidebar();
+		</script>
 		<div id='site'>
-			<h2 style='color: cornflowerblue'>Create New Session:</h2>
-			<div style='width: 100%'>
+			<h2 style='color: cornflowerblue; margin-bottom: 32px'>Create New Session:</h2>
+			<div style='display: flex; flex-direction: row; flex-wrap: wrap; justify-content: space-between'>
+				<div style='margin: 20px 20px 20px 0'><h3 style='display: inline-block; margin: 0 10px 0 0'>Session name </h3><input placeholder='For ex. SSL Project'></div>
+				<div style='margin: 20px 0;'><h3 style='display: inline-block; margin: 0 10px 0 0'>Session duration <i class='far fa-clock' style='padding: 0 2px'></i></h3><input style='width: 2rem; text-align: center; overflow: hidden' placeholder='hh' type='number' min='0' max='23' onchange="if(parseInt(this.value,10)<10)this.value='0'+this.value;"><b> : </b><input style='width: 2rem; text-align: center; overflow: hidden' placeholder='mm' type='number' min='0' max='59' onchange="if(parseInt(this.value,10)<10)this.value='0'+this.value;"></div>
+			</div>
+			<div style='width: 100%; margin: 20px 0;'>
+				<h3>Enter main text below</h3>
 				<div style='box-sizing: border-box; box-shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 1px 1px rgba(0,0,0,0.16); border-radius: 2px;'>
 					<ul id='editor_topbar' class='clearfix'>
 						<li class='bold'><i class='fa fa-bold'></i></li>
@@ -82,16 +126,57 @@ if(isset($_POST['details'])) {
 					</ul>
 					<iframe id='iframe' width='100%'></iframe>
 				</div>
-				<span id='submit' style="background: blanchedalmond; padding: 10px 20px; box-sizing: border-box; margin: 10px 0; display: inline-block; cursor: pointer; user-select: none; border-radius: 2px;">Submit<i class="fa fa-chevron-right" style='margin-left: 8px'></i></span>
-				<script>document.getElementById('submit').addEventListener('click', function() {
-						$.ajax({
-							type: 'POST',
-							url: <?php echo "'".$_SERVER['PHP_SELF']."'";?>,
-							data: {'user':<?php echo $_SESSION['username']?>,'details': $('#iframe').html()},
-							success: function(msg) {alert('Successfully submitted details.')}
-						});
-					})</script>
 			</div>
+			<div id='add_question' style='display: inline-block; margin: 20px 0; background: #E91E63; cursor: pointer; padding: 8px 32px; color: black; border-radius: 16px; position: relative'>
+				<span style='display: block; color: whitesmoke;'><i class='fas fa-plus' style='padding: 0 8px 0 0'></i>Add Question</span>
+				<div id='add_div'>
+					<p id='scq'>Single Correct MCQ</p>
+					<p id='mcq'>Multiple Correct MCQ</p>
+					<p id='sat'>Short Answer Type</p>
+				</div>
+			</div><br>
+			<span id='submit' style="background: blanchedalmond; padding: 10px 20px; box-sizing: border-box; margin: 10px 0; display: inline-block; cursor: pointer; user-select: none; border-radius: 2px;">Submit<i class="fa fa-chevron-right" style='margin-left: 8px'></i></span>
+			<script>
+				// For add question button
+				$('#add_question').on('click', function () {
+					if ($('#add_div').css('display') === 'none')
+						$('#add_div').css('display','block');
+					else $('#add_div').css('display','none');
+				});
+				// For SCQ
+				var question = $('#add_question');
+				var count = 1;
+				function construct_scq(count) {
+					return '<div><h3>Question '+count+'</h3><input placeholder="write your question here"></div>';
+				}
+				function construct_mcq(count) {
+					return '<div><h3>Question '+count+'</h3><textarea placeholder="write your question here"></textarea></div>';
+				}
+				function construct_sat(count) {
+					return '<div><h3>Question '+count+'</h3><textarea placeholder="write your question here"></textarea></div>';
+				}
+				$('#scq').on('click', function () {
+					$(construct_scq(count)).insertBefore(question);
+					count++;
+				});
+				$('#mcq').on('click', function () {
+					$(construct_mcq(count)).insertBefore(question);
+					count++;
+				});
+				$('#sat').on('click', function () {
+					$(construct_sat(count)).insertBefore(question);
+					count++;
+				});
+				// For submit button
+				document.getElementById('submit').addEventListener('click', function() {
+					$.ajax({
+						type: 'POST',
+						url: <?php echo "'".$_SERVER['PHP_SELF']."'";?>,
+						data: {'user':<?php echo $_SESSION['username']?>,'details': $('#iframe').html()},
+						success: function(msg) {alert('Successfully submitted details.')}
+					});
+				})
+			</script>
 		</div>
  	</div>
 </body>

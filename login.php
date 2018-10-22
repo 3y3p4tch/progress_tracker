@@ -16,7 +16,7 @@ function sql_query ($user, $passwd) {
 		if( $conn === false ) {
 			return false;
 		}
-		$sql = "SELECT username, passwd FROM instructors WHERE username = ? AND passwd = ?";
+		$sql = "SELECT userID, username, passwd FROM instructors WHERE username = ? AND passwd = ?";
 		$stmt = sqlsrv_query($conn, $sql, array($user, $passwd));
 		if( $stmt === false ) {
 			return false;
@@ -24,9 +24,13 @@ function sql_query ($user, $passwd) {
 		if( sqlsrv_fetch( $stmt ) === false) {
 			return false;
 		}
-		$sql_username = sqlsrv_get_field($stmt, 0);
-		$sql_passwd = sqlsrv_get_field($stmt, 1);
+		$userID = sqlsrv_get_field($stmt, 0);
+		$sql_username = sqlsrv_get_field($stmt, 1);
+		$sql_passwd = sqlsrv_get_field($stmt, 2);
 		if ($user == $sql_username && $passwd == $sql_passwd) {
+			session_start();
+			$_SESSION['username'] = $sql_username;
+			$_SESSION['userID'] = $userID;
 			return true;
 		}
 		return false;
@@ -34,7 +38,7 @@ function sql_query ($user, $passwd) {
 }
 
 session_start();
-if (isset($_SESSION['username'])) {
+if (isset($_SESSION['username']) && isset($_SESSION['userID'])) {
 	header('location: dashboard.php');
 	exit();
 }
@@ -42,8 +46,6 @@ if (isset($_SESSION['username'])) {
 else if (isset($_COOKIE['username']) && isset($_COOKIE['passwd'])) {// for authentication
 	$user = $_COOKIE['username']; $passwd = $_COOKIE['passwd'];
 	if (sql_query($user, $passwd)) {
-		$_SESSION['username'] = $user;
-		$_SESSION['passwd'] = $passwd;
 		header('Location: dashboard.php');
 		exit();
 	}
@@ -60,7 +62,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 				setcookie('username', $user, time()+86400*365);
 				setcookie('passwd', $passwd, time()+ 86400*365);
 			}
-			$_SESSION['username'] = $user;
 			header('Location: dashboard.php');
 			exit();
 			
@@ -90,7 +91,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 	<div id='login'>
 		<form action="<?php echo htmlspecialchars($_SERVER["PHP_SELF"]);?>" method="post">
 			<span>Username</span>
-			<input type="text" placeholder="CSE LDAP" name="username" id="username" size="15" autocomplete='username' pattern="[A-Za-z_0-9]*" oninput='check_username(this)' required><br>
+			<input type="text" placeholder="CSE LDAP" name="username" id="username" size="15" autocomplete='username' oninput='check_username(this)' required><br>
 			<span>Password</span>
 			<input type="password" placeholder="Password" name="passwd" id="passwd" autocomplete='current-password' size="15" oninput='check_password(this)' required><br>
 			<label class='container'><input type="checkbox" checked="checked" name="remember_me"><span class='checkmark'></span><span style='display: inline-block;'>Remember Me</span></label>

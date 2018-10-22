@@ -23,6 +23,8 @@ $(function () {
 			}
 		}
 	}
+
+
 	var iframe = document.getElementsByTagName('iframe')[0];
 
 	// For iframe editable
