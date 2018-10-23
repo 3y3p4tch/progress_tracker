@@ -4,7 +4,6 @@
 function customError($errno, $errstr, $err_f, $err_l) {
   echo "<b>Error:</b> [$errno] $errstr $err_f $err_l";
 }
-
 //set error handler
 set_error_handler("customError");
 // //////////////////////////////*******To be removed when login.php is complete*******///////////////////////////////////////////////////////
@@ -51,7 +50,7 @@ else if (isset($_COOKIE['username']) && isset($_COOKIE['passwd'])) {// for authe
 	}
 }
 
-
+$invalid_credentials = false;
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
 	if (isset($_POST['username']) && isset($_POST['passwd'])) {
 		$user = $_POST['username']; $passwd = md5($_POST['passwd']);
@@ -66,7 +65,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 			exit();
 			
 		} else {
-			echo '<script>alert("Invalid username or password")</script>';
+			$invalid_credentials = true;
 		}
 	}
 }
@@ -89,7 +88,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 	</div>
 
 	<div id='login'>
+		<span style="position: absolute; top: 5%; right: 50%; color: #ffc107; font-family: 'cinzel decorative'; font-size: larger; transform: translateX(50%)">Voodle</span>
 		<form action="<?php echo htmlspecialchars($_SERVER["PHP_SELF"]);?>" method="post">
+			<?php if($invalid_credentials) echo '<p style="color: #F48FB1; text-align: center; margin: 0 0 16px 0">Invalid Username or Password</p>'; ?>
 			<span>Username</span>
 			<input type="text" placeholder="CSE LDAP" name="username" id="username" size="15" autocomplete='username' oninput='check_username(this)' required><br>
 			<span>Password</span>
