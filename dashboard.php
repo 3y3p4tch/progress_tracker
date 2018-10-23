@@ -146,26 +146,39 @@ if(isset($_POST['update_sidebar'])) {
 				// For SCQ
 				var question = $('#add_question');
 				var count = 1;
-				function construct_scq(count) {
-					return '<div><h3>Question '+count+'</h3><input placeholder="write your question here"></div>';
+				function construct_scq(c) {
+					count++;
+					return '<div id="temp'+c+'"><h3>Question '+c+'</h3>\
+					<input placeholder="write your question here"><i id="icon'+c+'" class="far fa-trash-alt" style="font-size:large;" ></i></a></div>';
 				}
-				function construct_mcq(count) {
-					return '<div><h3>Question '+count+'</h3><textarea placeholder="write your question here"></textarea></div>';
+				function construct_mcq(c) {
+					count++;
+					return '<div id="temp'+c+'"><h3>Question '+c+'</h3>\
+					<input placeholder="write your question here"><i id="icon'+c+'" class="far fa-trash-alt" style="font-size:large;" ></i></a></div>';
 				}
-				function construct_sat(count) {
-					return '<div><h3>Question '+count+'</h3><textarea placeholder="write your question here"></textarea></div>';
+				function construct_sat(c) {
+					count++;
+					return '<div id="temp'+c+'"><h3>Question '+c+'</h3>\
+					<input placeholder="write your question here"><i id="icon'+c+'" class="far fa-trash-alt" style="font-size:large;" ></i></a></div>';
+				}
+				function remove_question(num) {
+					$('#temp'+num).remove();
+					for(var i = num+1; i <= count; i++) {
+						$("#temp"+i+" h3").html('Question '+(i-1));
+						$("#temp"+i+" i").attr('id', 'icon'+(i-1));
+						$('#temp'+i).attr('id','temp'+(i-1));
+					}
+					count--;
 				}
 				$('#scq').on('click', function () {
 					$(construct_scq(count)).insertBefore(question);
-					count++;
+					$('#icon'+(count-1)).on('click', function () {remove_question(parseInt($(this).attr('id').substr(4)));});
 				});
 				$('#mcq').on('click', function () {
 					$(construct_mcq(count)).insertBefore(question);
-					count++;
 				});
 				$('#sat').on('click', function () {
 					$(construct_sat(count)).insertBefore(question);
-					count++;
 				});
 				// For submit button
 				document.getElementById('submit').addEventListener('click', function() {

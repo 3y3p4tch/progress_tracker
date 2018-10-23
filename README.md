@@ -13,7 +13,7 @@
 
 ## Things completed:
 ### Web
-> &#10003; login page completed successfully
+> &#10003; login page finished
 > 
 > &#10003; `WYSIWYG` text editor added (basic)
 
@@ -28,7 +28,6 @@
 
 > `customize sidebar, topbar and functionalities`  
 
-* User authentication using SQL in web
 * Work on `LaTeX bug` in text editor
 * Add facility for previous assignment results
 * Add webpage to track progress `(Graphs, pie charts etc.)`

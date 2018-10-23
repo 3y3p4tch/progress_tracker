@@ -176,7 +176,7 @@ input {
     border: 0;
     border-bottom: 2px solid pink;
     padding: 5px;
-    font-size: 1.25rem;
+    font-size: large;
     font-family: inherit;
     outline: none;
     transition: 0.1s;
