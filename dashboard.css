@@ -56,11 +56,11 @@ body {
     }
 }
 
-#right-side-bar ul {
+#sessions_list {
     list-style-type: circle;
     padding: 0;
 }
-#right-side-bar ul > span {
+#sessions_list > span {
     display: inline-block;
     cursor: pointer;
     margin: 0.5em 0;
@@ -68,19 +68,19 @@ body {
 #right-side-bar i {
     margin: 0 4px;
 }
-#right-side-bar ul > li {
+#sessions_list > li {
     display: block;
     padding: 0.5em 0 0.5em 1.5em;
     cursor: pointer;
 }
-#right-side-bar ul > li:hover {
+#sessions_list > li:hover {
     background: #222;
     color: #ddd;
 }
-#right-side-bar ul > li > i {
+#sessions_list > li > i {
     color: #8bc34a;
 }
-#right-side-bar ul > li:hover > i {
+#sessions_list > li:hover > i {
     color: #FF9800;
 }
 /* Scrollbar */
@@ -170,9 +170,8 @@ iframe {
     user-select: none;
 }
 
-input {
+input:not([type]), input[type=number] {
     margin: 5px 0;
-    width: 20em;
     border: 0;
     border-bottom: 2px solid pink;
     padding: 5px;
@@ -191,7 +190,7 @@ input[type=number]::-webkit-inner-spin-button,
 input[type=number]::-webkit-outer-spin-button { 
   -webkit-appearance: none; 
   margin: 0; 
-}
+}   
 
 #add_div {
     position: absolute;
@@ -223,4 +222,135 @@ input[type=number]::-webkit-outer-spin-button {
 #add_div *:hover {
     background: #ff9c9c;
     color: firebrick;
+}
+textarea {
+    outline: none;
+    border: 1px solid black;
+    resize: none;
+    border: 0;
+    border-bottom: 2px solid pink;
+    font-family: inherit;
+    font-size: large;
+    width: calc(100% - 60px);
+    overflow: hidden;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+}
+textarea:focus {
+    border-bottom: 2px solid deepskyblue;
+    background: aliceblue;
+}
+.fa-trash-alt:hover {
+    color: crimson;
+}
+.fa-flag {
+    color: #ddd;
+}
+
+.fa-flag:hover {
+    color: #aaa;
+}
+.fa-flag.checkpoint {
+    color: deepskyblue;
+}
+
+/* The checkbox/radiobox container */
+.container {
+    display: block;
+    position: relative;
+    padding-left: 2em;
+    margin-bottom: 0.5em;
+    cursor: pointer;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+    display: inline-block;
+}
+
+/* Hide the browser's default checkbox */
+.container input[type] {
+    position: absolute;
+    opacity: 0;
+    cursor: pointer;
+    height: 0;
+    width: 0;
+}
+
+/* Create a custom checkbox */
+.checkmark {
+    position: absolute;
+    top: 50%;
+    left: 0;
+    height: 1.25em;
+    width: 1.25em;
+    background-color: #eee;
+    transform: translateY(-50%);
+}
+
+/* On mouse-over, add a grey background color */
+.container:hover input ~ .checkmark {
+    background-color: #ccc;
+}
+
+/* When the checkbox is checked, add a blue background */
+.container input:checked ~ .checkmark {
+    background-color: #2196F3;
+}
+
+/* Create the checkmark/indicator (hidden when not checked) */
+.checkmark:after {
+    content: "✓";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: white;
+    display: none;
+}
+
+/* Show the checkmark when checked */
+.container input:checked ~ .checkmark:after {
+    display: block;
+}
+
+/* Create a custom checkbox */
+.radiobttn {
+    position: absolute;
+    top: 50%;
+    left: 0;
+    height: 1em;
+    width: 1em;
+    border-radius: 0.5em;
+    background-color: #eee;
+    transform: translateY(-50%);
+}
+
+/* On mouse-over, add a grey background color */
+.container:hover input ~ .radiobttn {
+    background-color: #ccc;
+}
+
+/* When the checkbox is checked, add a blue background */
+.container input:checked ~ .radiobttn {
+    background-color: #2196F3;
+}
+
+/* Create the checkmark/indicator (hidden when not checked) */
+.radiobttn:after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    display: none;
+    height: 50%;
+    width: 50%;
+    background: white;
+    border-radius: 50%;
+}
+
+/* Show the checkmark when checked */
+.container input:checked ~ .radiobttn:after {
+    display: block;
 }

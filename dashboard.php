@@ -23,16 +23,41 @@ if(isset($_POST['update_sidebar'])) {
 		echo json_encode(array('message' => "Server not Reachable"));
 		exit();
 	}
-	$sql = "SELECT session_name, start_time, duration FROM sessions_ INNER JOIN instructors WHERE userID = ?";
+	$sql = "SELECT session_name, start_time, duration FROM sessions_ INNER JOIN instructors ON sessions_.userID = instructors.userID WHERE sessions_.userID = ?";
 	$stmt = sqlsrv_query($conn, $sql, array($_SESSION['userID']));
 	if ($stmt === false) {
 		echo json_encode(array('message' => "Server Error"));
 		exit();
 	}
-	$name = sqlsrv_get_field($stmt, 0);
-	$start = sqlsrv_get_field($stmt, 1);
-	$duration = sqlsrv_get_field($stmt, 2);
-	echo json_encode(array('name' => $name, 'start' => $start, 'duration' => $duration, 'now' => time()));
+	$answer = array();
+	while( $row = sqlsrv_fetch_array( $stmt) ) {
+    	array_push($answer, array('name' => $row['session_name'], 'start' => $row['start_time'], 'duration' => $row['duration'], 'now' => time()));
+	}
+	echo json_encode($answer);
+	exit();
+}
+
+if(isset($_POST['new_session'])) {
+	$data = json_decode($_POST['new_session']);
+	$conn = sqlsrv_connect('LAPTOP-DJ46JC9S', array( "Database"=>"voodle", "UID"=>"voodle", "PWD"=>"KanekiK" ));
+	if ($conn === false) {
+		echo json_encode(array('message' => "Server not Reachable"));
+		exit();
+	}
+	$sql = "INSERT INTO sessions_ (userID, session_name, start_time, duration, details, checkpoints) VALUES (?, ?, ?, ?, ?, ?)";
+	$stmt = sqlsrv_query($conn, $sql, array($_SESSION['userID'], $data->session_name, $data->start_time, $data->duration, $data->main_text, $data->checkpoints));
+	if ($stmt === false) {
+		echo json_encode(array('message' => "Server Error"));
+		exit();
+	}
+	$sql = "INSERT INTO questions (userID, session_name, question_no, problem, options, correct) VALUES (?, ?, ?, ?, ?, ?)";
+	for($i = 0; $i < $data->questions.size(); $i++) {
+		$stmt = sqlsrv_query($conn, $sql, array($_SESSION['userID'], $data->session_name, $i, $data->questions[$i]->problem_statement, $data->questions[$i]->options, $data->questions[$i]->correct));
+		if ($stmt === false) {
+			echo json_encode(array('message' => "Server Error"));
+			exit();
+		}
+	}
 	exit();
 }
 
@@ -66,11 +91,11 @@ if(isset($_POST['update_sidebar'])) {
 	<div style='display: flex; position: absolute; width: 100%; flex-direction: row; height: calc(100% - 48px); overflow: hidden'>
 		<div id='right-side-bar'>
 			<span style='color: white; text-align: center; display: block; cursor: default; padding: 12px 4px;'><i style='padding: 0 16px' class='fas fa-user'></i><?php echo $_SESSION['username']?></span>
-			<ul class='expand-dropdown'><span><i class="fas fa-angle-down"></i>Your Sessions</span>
-				<li>Voodle<i class="fas fa-feather-alt clearfix" style='float: right;'></i></li>
+			<ul id='sessions_list' class='expand-dropdown'><span><i class="fas fa-angle-down"></i>Your Sessions</span>
+				<!-- <li>Voodle<i class="fas fa-feather-alt clearfix" style='float: right;'></i></li>
 				<li>Temp<i class="fas fa-feather-alt clearfix" style='float: right;'></i></li>
 				<li>Android</li>
-				<li>Kaneki Ken</li>
+				<li>Kaneki Ken</li> -->
 			</ul>
 		</div>
 		<!-- For updating sidebar every 2 seconds -->
@@ -80,30 +105,31 @@ if(isset($_POST['update_sidebar'])) {
 			xhttp.onreadystatechange = function() {
 				if (this.readyState == 4 && this.status == 200) {
 					var response = JSON.parse(this.responseText);
-					if (response['message'] == '') {
-						// response['name'], response['start'], response['duration']
-						// if (time() - response['start'] <= response['duration']){
-						// 	<i class="fas fa-angle-down"></i>response['name']</span>
-						// }
-						// else
-						// echo("Yash Parmar");
+					if ('message' in response)
+						alert(response['message']);
+					else {
+						if (response.length === 0) {
+							$('#sessions_list').append('<li><i class="fas fa-plus" style="margin: 0 8px 0 0"></i>Create a session</li>');
+						}
+						else for(var i = 0; i < response.length; i++) {
+							$('#sessions_list').append('<li>'+response[i]['name']+'</li>');
+						}
 					}
-					// else console.log(response['message']);
 				}
 			};
 			xhttp.open("POST", "<?php echo $_SERVER['PHP_SELF']?>" , true);
 			xhttp.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
 			xhttp.send("update_sidebar");
-			setTimeout(update_sidebar, 2000);
 		}
 		update_sidebar();
 		</script>
 		<div id='site'>
 			<h2 style='color: cornflowerblue; margin-bottom: 32px'>Create New Session:</h2>
 			<div style='display: flex; flex-direction: row; flex-wrap: wrap; justify-content: space-between'>
-				<div style='margin: 20px 20px 20px 0'><h3 style='display: inline-block; margin: 0 10px 0 0'>Session name </h3><input placeholder='For ex. SSL Project'></div>
-				<div style='margin: 20px 0;'><h3 style='display: inline-block; margin: 0 10px 0 0'>Session duration <i class='far fa-clock' style='padding: 0 2px'></i></h3><input style='width: 2rem; text-align: center; overflow: hidden' placeholder='hh' type='number' min='0' max='23' onchange="if(parseInt(this.value,10)<10)this.value='0'+this.value;"><b> : </b><input style='width: 2rem; text-align: center; overflow: hidden' placeholder='mm' type='number' min='0' max='59' onchange="if(parseInt(this.value,10)<10)this.value='0'+this.value;"></div>
+				<div style='margin: 20px 20px 20px 0'><h3 style='display: inline-block; margin: 0 10px 0 0'>Session name </h3><input id='session_name' placeholder='For ex. SSL Project'></div>
+				<div style='margin: 20px 0;'><h3 style='display: inline-block; margin: 0 10px 0 0'>Session duration <i class='far fa-clock' style='padding: 0 2px'></i></h3><input id='duration1' style='width: 2rem; text-align: center; overflow: hidden' placeholder='hh' type='number' min='0' max='23' onchange="if(parseInt(this.value,10)<10)this.value='0'+this.value;"><b> : </b><input id='duration2' style='width: 2rem; text-align: center; overflow: hidden' placeholder='mm' type='number' min='0' max='59' onchange="if(parseInt(this.value,10)<10)this.value='0'+this.value;"></div>
 			</div>
+			<h3 style='display: inline-block; margin: 0 10px 0 0'>Start Time <i class='fas fa-calendar-alt' style='padding: 0 2px'></i></h3><input id='start_time' style='width: auto; overflow: hidden' placeholder='dd-mm-yyyy hh:mm'>
 			<div style='width: 100%; margin: 20px 0;'>
 				<h3>Enter main text below</h3>
 				<div style='box-sizing: border-box; box-shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 1px 1px rgba(0,0,0,0.16); border-radius: 2px;'>
@@ -146,47 +172,130 @@ if(isset($_POST['update_sidebar'])) {
 				// For SCQ
 				var question = $('#add_question');
 				var count = 1;
+				
+
+				function resize_textarea(input) {
+					input.css('height', 'auto');
+					input.css('height', input.prop('scrollHeight') + 'px');
+				}
+				function delayedResize_textarea(input) {
+					setTimeout(function () { resize_textarea(input) }, 0);
+				}
+
 				function construct_scq(c) {
 					count++;
-					return '<div id="temp'+c+'"><h3>Question '+c+'</h3>\
-					<input placeholder="write your question here"><i id="icon'+c+'" class="far fa-trash-alt" style="font-size:large;" ></i></a></div>';
+					return '<div id="temp'+c+'" style=\'position: relative\' type_of_question="scq"><h3>Question '+c+'</h3>\
+					<textarea placeholder="write your question here" rows="1" spellcheck=false></textarea>\
+					<i id="icon'+c+'" class="far fa-trash-alt" style="font-size:large; position: absolute; right: 5px; top: 5px; cursor: pointer" ></i>\
+					<i id="checkpoint'+c+'" class="fas fa-flag" style="font-size:large; position: absolute; right: 5px; bottom: 5px; cursor: pointer"></i>\
+					<div><label class="container"><input name="'+c+'"type="radio"><span class="radiobttn"></span><input></label></div>\
+					<div><label class="container"><input name="'+c+'"type="radio"><span class="radiobttn"></span><input></label></div>\
+					<div><label class="container"><input name="'+c+'"type="radio"><span class="radiobttn"></span><input></label></div>\
+					<div><label class="container"><input name="'+c+'"type="radio"><span class="radiobttn"></span><input></label></div>\
+					</div>';
 				}
 				function construct_mcq(c) {
 					count++;
-					return '<div id="temp'+c+'"><h3>Question '+c+'</h3>\
-					<input placeholder="write your question here"><i id="icon'+c+'" class="far fa-trash-alt" style="font-size:large;" ></i></a></div>';
+					return '<div id="temp'+c+'" style=\'position: relative\' type_of_question="mcq"><h3>Question '+c+'</h3>\
+					<textarea placeholder="write your question here" rows="1" spellcheck=false></textarea>\
+					<i id="icon'+c+'" class="far fa-trash-alt" style="font-size:large; position: absolute; right: 5px; top: 5px; cursor: pointer" ></i>\
+					<i id="checkpoint'+c+'" class="fas fa-flag" style="font-size:large; position: absolute; right: 5px; bottom: 5px; cursor: pointer"></i>\
+					<div><label class="container"><input name="'+c+'1"type="checkbox"><span class="checkmark"></span><input></label></div>\
+					<div><label class="container"><input name="'+c+'2"type="checkbox"><span class="checkmark"></span><input></label></div>\
+					<div><label class="container"><input name="'+c+'3"type="checkbox"><span class="checkmark"></span><input></label>\
+					<div><label class="container"><input name="'+c+'4"type="checkbox"><span class="checkmark"></span><input></label>\
+					</div>';
 				}
 				function construct_sat(c) {
 					count++;
-					return '<div id="temp'+c+'"><h3>Question '+c+'</h3>\
-					<input placeholder="write your question here"><i id="icon'+c+'" class="far fa-trash-alt" style="font-size:large;" ></i></a></div>';
+					return '<div id="temp'+c+'" style=\'position: relative\' type_of_question="sat"><h3>Question '+c+'</h3>\
+					<textarea placeholder="write your question here" rows="1" spellcheck=false></textarea>\
+					<i id="icon'+c+'" class="far fa-trash-alt" style="font-size:large; position: absolute; right: 5px; top: 5px; cursor: pointer" ></i>\
+					<i id="checkpoint'+c+'" class="fas fa-flag" style="font-size:large; position: absolute; right: 5px; bottom: 5px; cursor: pointer"></i>\
+					</div>';
 				}
 				function remove_question(num) {
 					$('#temp'+num).remove();
 					for(var i = num+1; i <= count; i++) {
 						$("#temp"+i+" h3").html('Question '+(i-1));
-						$("#temp"+i+" i").attr('id', 'icon'+(i-1));
+						$("#temp"+i+" .fa-trash-alt").attr('id', 'icon'+(i-1));
+						$("#temp"+i+" .fa-flag").attr('id', 'checkpoint'+(i-1));
 						$('#temp'+i).attr('id','temp'+(i-1));
 					}
 					count--;
 				}
 				$('#scq').on('click', function () {
 					$(construct_scq(count)).insertBefore(question);
+					delayedResize_textarea($('#temp'+(count-1)+' textarea'));
 					$('#icon'+(count-1)).on('click', function () {remove_question(parseInt($(this).attr('id').substr(4)));});
+					$('#temp'+(count-1)+' textarea').on('cut', function () { delayedResize_textarea($(this)); });
+					$('#temp'+(count-1)+' textarea').on('keydown', function () { delayedResize_textarea($(this)); });
+					$('#temp'+(count-1)+' textarea').on('drop', function () { delayedResize_textarea($(this)); });
+					$('#temp'+(count-1)+' textarea').on('paste', function () { delayedResize_textarea($(this)); });
+					$('#checkpoint'+(count-1)).on('click', function () {$(this).toggleClass('checkpoint')});
+					// $('#temp'+(count-1)+' input[type=radio]').each(function () {
+					// 	$(this).on('click', function (e) {
+					// 		if ($(this).prop('checked') === true) $(this).prop('checked', false);
+					// 		else $(this).prop('checked', true);
+					// 		e.preventDefault();
+					// 	});
+					// })
 				});
 				$('#mcq').on('click', function () {
 					$(construct_mcq(count)).insertBefore(question);
+					delayedResize_textarea($('#temp'+(count-1)+' textarea'));
+					$('#icon'+(count-1)).on('click', function () {remove_question(parseInt($(this).attr('id').substr(4)));});
+					$('#temp'+(count-1)+' textarea').on('cut', function () { delayedResize_textarea($(this)); });
+					$('#temp'+(count-1)+' textarea').on('keydown', function () { delayedResize_textarea($(this)); });
+					$('#temp'+(count-1)+' textarea').on('drop', function () { delayedResize_textarea($(this)); });
+					$('#temp'+(count-1)+' textarea').on('paste', function () { delayedResize_textarea($(this)); });
+					$('#checkpoint'+(count-1)).on('click', function () {$(this).toggleClass('checkpoint')});
 				});
 				$('#sat').on('click', function () {
 					$(construct_sat(count)).insertBefore(question);
+					delayedResize_textarea($('#temp'+(count-1)+' textarea'));
+					$('#icon'+(count-1)).on('click', function () {remove_question(parseInt($(this).attr('id').substr(4)));});
+					$('#temp'+(count-1)+' textarea').on('cut', function () { delayedResize_textarea($(this)); });
+					$('#temp'+(count-1)+' textarea').on('keydown', function () { delayedResize_textarea($(this)); });
+					$('#temp'+(count-1)+' textarea').on('drop', function () { delayedResize_textarea($(this)); });
+					$('#temp'+(count-1)+' textarea').on('paste', function () { delayedResize_textarea($(this)); });
+					$('#checkpoint'+(count-1)).on('click', function () {$(this).toggleClass('checkpoint')});
 				});
 				// For submit button
 				document.getElementById('submit').addEventListener('click', function() {
+					var questions = [];
+					for(var i = 1; i < count; i++) {
+						var options = [];
+						var correct = [];
+						if ($('#temp'+i).attr('type_of_question') === 'scq' || $('#temp'+i).attr('type_of_question') === 'mcq') {
+							$('#temp'+i+' input:not([type])').each( function(i) {
+								options.push($(this).val());
+							});
+							$('#temp'+i+' input[type]').each( function(i) {
+								if ($(this).prop('checked'))
+									correct.push(i);
+							});
+						}
+						questions.push({'problem_statement': $('#temp'+i+' textarea').val(), 'type': $('#temp'+i).attr('type_of_question'), 'options' : options, 'correct' : correct});
+					}
+					var checkpoints = [];
+					for(var i = 1; i < count; i++) {
+						if ($('#checkpoint'+i).hasClass('checkpoint'))
+							checkpoints.push(i);
+					}
+					var data_to_be_sent = {
+						'session_name': $('#session_name').val(),
+						'duration': $('#duration1').val() * 60 + $('#duration2').val(),
+						'main_text': $('#iframe').html(),
+						'questions': questions,
+						'checkpoints': checkpoints,
+						'start_time': $('#start_time').val()
+					};
 					$.ajax({
 						type: 'POST',
 						url: <?php echo "'".$_SERVER['PHP_SELF']."'";?>,
-						data: {'user':<?php echo $_SESSION['username']?>,'details': $('#iframe').html()},
-						success: function(msg) {alert('Successfully submitted details.')}
+						data: {'new_session': JSON.stringify(data_to_be_sent)},
+						success: function(msg) {/*alert('Successfully submitted details.')*/; alert(msg); console.log(JSON.stringify(data_to_be_sent))}
 					});
 				})
 			</script>

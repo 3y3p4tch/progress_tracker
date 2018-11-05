@@ -24,7 +24,6 @@ $(function () {
 		}
 	}
 
-
 	var iframe = document.getElementsByTagName('iframe')[0];
 
 	// For iframe editable
@@ -130,6 +129,7 @@ $(function () {
 		delayedResize();
 		return true;
 	});
+
 
 	// For editor buttons
 	var commands = ['bold', 'italic', 'strikethrough', 'underline', 'insertOrderedList', 'insertUnorderedList', 'indent', 'outdent', 'superscript', 'subscript', 'justifyFull', 'justifyLeft', 'justifyRight', 'justifyCenter'];
