@@ -69,10 +69,6 @@ if(isset($_POST['update_sidebar'])) {
 		<div id='right-side-bar'>
 			<span style='color: white; text-align: center; display: block; cursor: default; padding: 12px 4px;'><i style='padding: 0 16px' class='fas fa-user'></i><?php echo $_SESSION['username']?></span>
 			<ul id='sessions_list' class='expand-dropdown'><span><i class="fas fa-angle-down"></i>Your Sessions</span>
-				<!-- <li>Voodle<i class="fas fa-feather-alt clearfix" style='float: right;'></i></li>
-				<li>Temp<i class="fas fa-feather-alt clearfix" style='float: right;'></i></li>
-				<li>Android</li>
-				<li>Kaneki Ken</li> -->
 			</ul>
 		</div>
 		<!-- For updating sidebar every 2 seconds -->
@@ -82,23 +78,37 @@ if(isset($_POST['update_sidebar'])) {
 			xhttp.onreadystatechange = function() {
 				if (this.readyState == 4 && this.status == 200) {
 					var response = JSON.parse(this.responseText);
+					$('#sessions_list li').remove();
 					if ('message' in response)
-						alert(response['message']);
+						$('#sessions_list').append('<li style="text-align: center; padding-left: 0; color: #ef9a9a">' + response['message'] + '</li>');
 					else {
-						if (response.length === 0) {
+						var sessions = response['sessions'];
+						if (sessions.length === 0) {
 							$('#sessions_list').append('<li><i class="fas fa-plus" style="margin: 0 8px 0 0"></i>Create a session</li>');
 						}
-						else for(var i = 0; i < response.length; i++) {
-							$('#sessions_list').append('<li>'+response[i]['name']+'</li>');
+						else for(var i = 0; i < sessions.length; i++) {
+							if ((new Date(sessions[i]['start']['date']) <= new Date(response['now']*1000)) && (new Date(response['now']*1000) <= new Date(new Date(sessions[i]['start']['date']).getTime() + sessions[i]['duration']*60*1000))) {
+								$('#sessions_list').append('<li><span style="display: inline-block; overflow: hidden; max-width: calc(100% - 2em); white-space: nowrap; text-overflow: ellipsis">'+sessions[i]['name']+'</span><i class="fas fa-feather-alt clearfix" style="float: right;"></i></li>');
+								$('#sessions_list li:nth-child('+(i+2)+')').on('click', function() {
+									window.location.assign('/results.php?name='+escape($(this).children(0).html()));
+								});
+							}
+							else {
+								$('#sessions_list').append('<li style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding-right: 0.5em">'+sessions[i]['name']+'</li>');
+								$('#sessions_list li:nth-child('+(i+2)+')').on('click', function() {
+									window.location.assign('/results.php?name='+escape($(this).html()));
+								});
+							}
 						}
 					}
 				}
 			};
-			xhttp.open("POST", "<?php echo $_SERVER['PHP_SELF']?>" , true);
+			xhttp.open("POST", "./dashboard.php" , true);
 			xhttp.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
 			xhttp.send("update_sidebar");
 		}
 		update_sidebar();
+		setInterval(update_sidebar, 2000);
 		</script>
 		<div id='site'>
 		</div>

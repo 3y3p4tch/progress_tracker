@@ -66,7 +66,7 @@ body {
     margin: 0.5em 0;
 }
 #right-side-bar i {
-    margin: 0 4px;
+    margin: 0 0.5em;
 }
 #sessions_list > li {
     display: block;
