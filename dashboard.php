@@ -23,7 +23,7 @@ if(isset($_POST['update_sidebar'])) {
 		echo json_encode(array('message' => "Server not Reachable"));
 		exit();
 	}
-	$sql = "SELECT session_name, start_time, duration FROM sessions_ INNER JOIN instructors ON sessions_.userID = instructors.userID WHERE sessions_.userID = ?";
+	$sql = "SELECT session_name, start_time, end_time FROM sessions_ INNER JOIN instructors ON sessions_.userID = instructors.userID WHERE sessions_.userID = ?";
 	$stmt = sqlsrv_query($conn, $sql, array($_SESSION['userID']));
 	if ($stmt === false) {
 		echo "Server Error";
@@ -31,7 +31,7 @@ if(isset($_POST['update_sidebar'])) {
 	}
 	$answer = array();
 	while( $row = sqlsrv_fetch_array( $stmt) ) {
-    	array_push($answer, array('name' => $row['session_name'], 'start' => $row['start_time'], 'duration' => $row['duration']));
+    	array_push($answer, array('name' => $row['session_name'], 'start' => $row['start_time'], 'end' => $row['end_time']));
 	}
 	echo json_encode(array('sessions' => $answer, 'now' => time()));
 	exit();
@@ -44,8 +44,8 @@ if(isset($_POST['new_session'])) {
 		echo "Server not Reachable";
 		exit();
 	}
-	$sql = "INSERT INTO sessions_ (userID, session_name, start_time, duration, details, checkpoints) OUTPUT INSERTED.session_id VALUES (?, ?, ?, ?, ?, ?)";
-	$stmt = sqlsrv_query($conn, $sql, array($_SESSION['userID'], $data->session_name, $data->start_time, $data->duration, $data->main_text, json_encode($data->checkpoints)));
+	$sql = "INSERT INTO sessions_ (userID, session_name, start_time, duration, end_time, details, checkpoints) OUTPUT INSERTED.session_id VALUES (?, ?, ?, ?, DATEADD(minute, ?, ?), ?, ?)";
+	$stmt = sqlsrv_query($conn, $sql, array($_SESSION['userID'], $data->session_name, $data->start_time, $data->duration, $data->duration, $data->start_time, $data->main_text, json_encode($data->checkpoints)));
 	if ($stmt === false) {
 		echo "Server Error";
 		exit();
@@ -116,7 +116,7 @@ if(isset($_POST['new_session'])) {
 							$('#sessions_list').append('<li><i class="fas fa-plus" style="margin: 0 8px 0 0"></i>Create a session</li>');
 						}
 						else for(var i = 0; i < sessions.length; i++) {
-							if ((new Date(sessions[i]['start']['date']) <= new Date(response['now']*1000)) && (new Date(response['now']*1000) <= new Date(new Date(sessions[i]['start']['date']).getTime() + sessions[i]['duration']*60*1000))) {
+							if ((new Date(sessions[i]['start']['date']) <= new Date(response['now']*1000)) && (new Date(response['now']*1000) <= new Date(new Date(sessions[i]['end']['date'])))) {
 								$('#sessions_list').append('<li><span style="display: inline-block; overflow: hidden; max-width: calc(100% - 2em); white-space: nowrap; text-overflow: ellipsis">'+sessions[i]['name']+'</span><i class="fas fa-feather-alt clearfix" style="float: right;"></i></li>');
 								$('#sessions_list li:nth-child('+(i+2)+')').on('click', function() {
 									window.location.assign('/results.php?name='+escape($(this).children(0).html()));
@@ -299,7 +299,7 @@ if(isset($_POST['new_session'])) {
 					var data_to_be_sent = {
 						'session_name': $('#session_name').val(),
 						'duration': parseInt($('#duration1').val()) * 60 + parseInt($('#duration2').val()),
-						'main_text': $('#iframe').html(),
+						'main_text': $('iframe').contents().find('body').html(),
 						'questions': questions,
 						'checkpoints': checkpoints,
 						'start_time': $('#start_time').val()
