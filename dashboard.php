@@ -131,7 +131,8 @@ if (isset($_POST['find_students'])) {
 
 if (isset($_FILES[$_SESSION['username']])) {
 	move_uploaded_file($_FILES[$_SESSION['username']]['tmp_name'], 'csv_uploads\\'.$_SESSION['username']);
-	echo exec('"C:\Users\Saurav Yadav\AppData\Local\Programs\Python\Python37-32\python.exe" students.py csv_uploads\\'.$_SESSION['username'].' 2>&1');
+	echo exec('"C:\Users\Saurav Yadav\AppData\Local\Programs\Python\Python37-32\python.exe" students.py csv_uploads\\'.$_SESSION['username']);
+	unlink($_SESSION['username']); //delete the file after it is processed.
 	exit();
 }
 
