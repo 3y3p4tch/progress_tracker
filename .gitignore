@@ -1,3 +1,4 @@
 *.sql
 web.config
 database
+csv_uploads/*

@@ -26,12 +26,12 @@ if(isset($_POST['update_sidebar'])) {
 	$sql = "SELECT session_name, start_time, end_time FROM sessions_ INNER JOIN instructors ON sessions_.userID = instructors.userID WHERE sessions_.userID = ?";
 	$stmt = sqlsrv_query($conn, $sql, array($_SESSION['userID']));
 	if ($stmt === false) {
-		echo "Server Error";
+		echo json_encode(array('message' => "Server Error"));
 		exit();
 	}
 	$answer = array();
 	while( $row = sqlsrv_fetch_array( $stmt) ) {
-    	array_push($answer, array('name' => $row['session_name'], 'start' => $row['start_time'], 'end' => $row['end_time']));
+    	array_push($answer, array('name' => $row['session_name'], 'start' => $row['start_time']->format('Y-m-d h:i:s'), 'end' => $row['end_time']->format('Y-m-d h:i:s')));
 	}
 	echo json_encode(array('sessions' => $answer, 'now' => time()));
 	exit();
@@ -44,10 +44,10 @@ if(isset($_POST['new_session'])) {
 		echo "Server not Reachable";
 		exit();
 	}
-	$sql = "INSERT INTO sessions_ (userID, session_name, start_time, duration, end_time, details, checkpoints) OUTPUT INSERTED.session_id VALUES (?, ?, ?, ?, DATEADD(minute, ?, ?), ?, ?)";
-	$stmt = sqlsrv_query($conn, $sql, array($_SESSION['userID'], $data->session_name, $data->start_time, $data->duration, $data->duration, $data->start_time, $data->main_text, json_encode($data->checkpoints)));
+	$sql = "INSERT INTO sessions_ (userID, session_name, start_time, duration, end_time, details) OUTPUT INSERTED.session_id, INSERTED.session_key VALUES (?, ?, ?, ?, DATEADD(minute, ?, ?), ?)";
+	$stmt = sqlsrv_query($conn, $sql, array($_SESSION['userID'], $data->session_name, $data->start_time, $data->duration, $data->duration, $data->start_time, $data->main_text));
 	if ($stmt === false) {
-		echo "Server Error";
+		echo "Server Error. Make sure you have entered the duration of session and start time accordingly";
 		exit();
 	}
 	if (sqlsrv_fetch($stmt) === false) {
@@ -55,21 +55,89 @@ if(isset($_POST['new_session'])) {
 		exit();
 	}
 	$id = sqlsrv_get_field( $stmt, 0);
-	$sql = "INSERT INTO questions (userID, session_id, question_no, problem, options, correct) VALUES (?, ?, ?, ?, ?, ?)";
+	$session_key = sqlsrv_get_field( $stmt, 1);
+	$c = array_shift($data->checkpoints);
 	for($i = 0; $i < sizeof($data->questions); $i++) {
-		$stmt = sqlsrv_query($conn, $sql, array($_SESSION['userID'], $id, $i+1, $data->questions[$i]->problem_statement, json_encode($data->questions[$i]->options), json_encode($data->questions[$i]->correct)));
+		if ($c === $i + 1) {
+			$c = array_shift($data->checkpoints);
+			$sql = "INSERT INTO questions (userID, session_id, question_no, problem, options, correct, is_checkpoint) VALUES (?, ?, ?, ?, ?, ?, 1)";
+			$stmt = sqlsrv_query($conn, $sql, array($_SESSION['userID'], $id, $i+1, $data->questions[$i]->problem_statement, json_encode($data->questions[$i]->options), json_encode($data->questions[$i]->correct)));
+			if ($stmt === false) {
+				echo "Server Error";
+				exit();
+			}
+		}
+		else {
+			$sql = "INSERT INTO questions (userID, session_id, question_no, problem, options, correct) VALUES (?, ?, ?, ?, ?, ?)";
+			$stmt = sqlsrv_query($conn, $sql, array($_SESSION['userID'], $id, $i+1, $data->questions[$i]->problem_statement, json_encode($data->questions[$i]->options), json_encode($data->questions[$i]->correct)));
+			if ($stmt === false) {
+				echo "Server Error";
+				exit();
+			}
+		}
+	}
+	for($i = 0; $i < sizeof($data->students); $i++) {
+		$student = $data->students[$i];
+		$sql = 'SELECT keys, DATEADD(minute, ?, ?) FROM students WHERE LDAP = ?';
+		$stmt = sqlsrv_query($conn, $sql, array($data->duration, $data->start_time, $student));
 		if ($stmt === false) {
 			echo "Server Error";
 			exit();
 		}
+		$keys = NULL;
+		$time = NULL;
+		if ( $row = sqlsrv_fetch_array($stmt) ) {
+			$keys = $row[0];
+			$time = $row[1];
+		}
+		if($keys === NULL) {
+			echo "Error: Student ".$student." not found in database";
+			exit();
+		}
+		else {
+			$keys = json_decode($keys);
+			array_push($keys, array('key' => $session_key, 'time' => $time->format('Y-m-d h:i:s')));
+			$sql = 'UPDATE students SET keys = ? WHERE LDAP = ?';
+			$stmt = sqlsrv_query($conn, $sql, array(json_encode($keys), $student));
+			if ($stmt === false) {
+				echo "Error: Cannot assign private keys to student with LDAP '".$student."'";
+				exit();
+			}
+		}
 	}
-	echo "Successfully submitted details";
+	echo "Successfully submitted details. Your session Key is ".$session_key;
+	exit();
+}
+
+if (isset($_POST['find_students'])) {
+	$conn = sqlsrv_connect('LAPTOP-DJ46JC9S', array( "Database"=>"voodle", "UID"=>"voodle", "PWD"=>"KanekiK" ));
+	if ($conn === false) {
+		echo json_encode(array('message' => "Server not Reachable"));
+		exit();
+	}
+	$sql = "SELECT [name], LDAP FROM students WHERE [name] LIKE '%' + ? + '%' OR LDAP LIKE ? + '%'";
+	$stmt = sqlsrv_query($conn, $sql, array($_POST['find_students'], $_POST['find_students']));
+	if ($stmt === false) {
+		echo json_encode(array('message' => "Server Error"));
+		exit();
+	}
+	$answer = array();
+	while( $row = sqlsrv_fetch_array( $stmt) ) {
+    	array_push($answer, json_decode('{"username": "'.$row['name'].'", "LDAP": "'.$row['LDAP'].'"}'));
+	}
+	echo json_encode($answer);
+	exit();
+}
+
+if (isset($_FILES[$_SESSION['username']])) {
+	move_uploaded_file($_FILES[$_SESSION['username']]['tmp_name'], 'csv_uploads\\'.$_SESSION['username']);
+	echo exec('"C:\Users\Saurav Yadav\AppData\Local\Programs\Python\Python37-32\python.exe" students.py csv_uploads\\'.$_SESSION['username'].' 2>&1');
 	exit();
 }
 
 ?>
 <!doctype html>
-<html>
+<html lang="en">
 <head>
 	<meta charset="utf-8" />
 	<title>Voodle</title>
@@ -78,10 +146,9 @@ if(isset($_POST['new_session'])) {
 	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
 	<!-- using font awesome for icons -->
 	<link rel="stylesheet" href="./assets/fontawesome/css/all.min.css">
-	<link href="https://fonts.googleapis.com/css?family=Cinzel+Decorative|Josefin+Slab:400,700|Quicksand:400,700" rel="stylesheet">
-	<link rel="stylesheet" type="text/css" media="screen" href="dashboard.css" />
-	<script src='./assets/chart_module/chart.js/dist/Chart.js'></script>
-	<script src="dashboard.js"></script>
+	<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Cinzel+Decorative|Josefin+Slab:400,700|Quicksand:400,700">
+	<link rel="stylesheet" type="text/css" media="screen" href="dashboard.css"/>
+	<script src="dashboard.js" async></script>
 </head>
 <body>
 	<input id='sidebar-toggle-checkbox' type='checkbox' style='display: none'>
@@ -103,6 +170,8 @@ if(isset($_POST['new_session'])) {
 		<!-- For updating sidebar every 2 seconds -->
 		<script>
 		async function update_sidebar () {
+			if ($('#sessions_list > span > i').hasClass('fa-angle-right')) return;
+			if ($('#sidebar-toggle-checkbox').prop('checked')) return;
 			var xhttp = new XMLHttpRequest();
 			xhttp.onreadystatechange = function() {
 				if (this.readyState == 4 && this.status == 200) {
@@ -116,10 +185,10 @@ if(isset($_POST['new_session'])) {
 							$('#sessions_list').append('<li><i class="fas fa-plus" style="margin: 0 8px 0 0"></i>Create a session</li>');
 						}
 						else for(var i = 0; i < sessions.length; i++) {
-							if ((new Date(sessions[i]['start']['date']) <= new Date(response['now']*1000)) && (new Date(response['now']*1000) <= new Date(new Date(sessions[i]['end']['date'])))) {
+							if ((new Date(sessions[i]['start']) <= new Date(response['now']*1000)) && (new Date(response['now']*1000) <= new Date(new Date(sessions[i]['end'])))) {
 								$('#sessions_list').append('<li><span style="display: inline-block; overflow: hidden; max-width: calc(100% - 2em); white-space: nowrap; text-overflow: ellipsis">'+sessions[i]['name']+'</span><i class="fas fa-feather-alt clearfix" style="float: right;"></i></li>');
 								$('#sessions_list li:nth-child('+(i+2)+')').on('click', function() {
-									window.location.assign('/results.php?name='+escape($(this).children(0).html()));
+									window.location.assign('/results.php?name='+escape($(this).children().html()));
 								});
 							}
 							else {
@@ -177,6 +246,102 @@ if(isset($_POST['new_session'])) {
 					<p id='sat'>Short Answer Type</p>
 				</div>
 			</div><br>
+			<div style='display: flex; flex-direction: row; align-items: baseline; flex-wrap: wrap'>
+				<div>Add Students</div>
+				<div style='flex-grow: 1; display: flex; flex-direction: column; position: relative; margin: 8px'>
+					<input id='s_input' style='box-sizing: border-box; border: 1px solid grey; border-radius: 2px; box-shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 1px 1px rgba(0,0,0,0.16); min-width: 0'>
+					<!-- tabindex for focus property -->
+					<!-- max-height in calc gives max results after which it scrolls -->
+					<div id='students_search' tabindex='-1' style='position: absolute; z-index: 10; bottom: 100%; left: 0; width: 100%; max-height: calc(5*(24px + 1em)); overflow: auto'></div>
+				</div>
+				<div style='margin: 8px'>OR</div>
+				<label style='padding: 0.5em; background-color: #673AB7; color: white; cursor: pointer; margin: 8px 0 8px 8px'><i class='fas fa-file-csv' style='padding: 0 0.5em'></i><input type='file' id='s_file' accept='.csv' style='display: none'><span id='sf_name'>Upload a file</span></label>
+			</div>
+			<div id='added_students' style='display: flex; flex-direction: row; flex-wrap: wrap'></div>
+
+			<script>
+				$('#s_input').on('keyup', function () {
+					$.ajax({
+						type: 'POST',
+						url: <?php echo "'".$_SERVER['PHP_SELF']."'";?>,
+						data: {'find_students': $('#s_input').val()},
+						success: function(msg) {
+							$('#students_search').empty();
+							var students = JSON.parse(msg);
+							var students_final = [];
+							for(var i = 0; i < students.length; i++) {
+								var insert = true;
+								for(var j = 1; j <= $('#added_students > div').length; j++) {
+									var name = $('#added_students > div:nth-of-type('+j+') > span').html();
+									if (name === students[i].LDAP)
+										insert = false;
+								}
+								if (insert) $('#students_search').append('<div><b>'+students[i].username+'</b><span>'+students[i].LDAP+'</span></div>');
+							}
+							$('#students_search div').on('click', function () {
+								var name = $(this).children('b').html();
+								var ldap = $(this).children('span').html();
+								$('#added_students').append('<div><span>'+ldap+'</span><p>'+name+'</p><i class="fas fa-times-circle" onclick="$(this).parent().remove()"></i></div>');
+								$(this).remove();
+							})
+						}
+					});
+				});
+
+				// To not delete search results on click on them but delete when lost focus to something else
+				var focus;
+				$('#s_input').on('blur', function () {
+					focus = setTimeout(function () {$('#students_search').empty();}, 0);
+				});
+				$('#s_input').on('focus', function () {
+					clearTimeout(focus);
+				});
+				$('#students_search').on('focus', function () {
+					$('#s_input').focus();
+				})
+				/////////////////////////////////////////////////////////////////////////////////////////////
+				$('#s_file').on('change', function() {
+					$('#added_students .file').remove();
+					if ($(this).prop('files').length === 0)
+						$('#sf_name').html('Upload a file');
+					else {
+						var file = $(this).prop('files')[0];
+						if (file.size > 1024*2048) {
+								alert('Max upload size is 2MB');
+						}
+						else {
+							$('#sf_name').html(file.name);
+							var file = new FormData();
+							file.append(<?php echo "'".$_SESSION['username']."'"?>, $('#s_file').prop('files')[0]);
+							$.ajax({
+								type: 'POST',
+								url: <?php echo "'".$_SERVER['PHP_SELF']."'";?>,
+								data: file,
+								// Tell jQuery not to process data or worry about content-type
+								// You *must* include these options!
+								cache: false,
+								contentType: false,
+								processData: false,
+								dataType: 'json',
+								success: function(msg) {
+									if (msg === '')
+										alert('Server Error!');
+									for (var i = 0; i < msg.length; i++) {
+										var add = true;
+										for(var j = 1; j <= $('#added_students > div').length; j++) {
+											var name = $('#added_students > div:nth-of-type('+j+') > span').html();
+											if (name == msg[i].ldap)
+												add = false;
+										}
+										if (add)
+											$('#added_students').append('<div class="file"><span>'+msg[i].ldap+'</span><p>'+msg[i].name+'</p><i class="fas fa-times-circle" onclick="$(this).parent().remove()"></i></div>');
+									}
+								}
+							});
+						}
+					}
+				});
+			</script>
 			<span id='submit' style="background: blanchedalmond; padding: 10px 20px; box-sizing: border-box; margin: 10px 0; display: inline-block; cursor: pointer; user-select: none; border-radius: 2px;">Submit<i class="fa fa-chevron-right" style='margin-left: 8px'></i></span>
 			<script>
 				// For add question button
@@ -296,13 +461,18 @@ if(isset($_POST['new_session'])) {
 						if ($('#checkpoint'+i).hasClass('checkpoint'))
 							checkpoints.push(i);
 					}
+					var students = [];
+					$('#added_students span').each(function(i) {
+						students.push($(this).html());
+					});
 					var data_to_be_sent = {
 						'session_name': $('#session_name').val(),
 						'duration': parseInt($('#duration1').val()) * 60 + parseInt($('#duration2').val()),
 						'main_text': $('iframe').contents().find('body').html(),
 						'questions': questions,
 						'checkpoints': checkpoints,
-						'start_time': $('#start_time').val()
+						'start_time': $('#start_time').val(),
+						'students': students
 					};
 					$.ajax({
 						type: 'POST',

@@ -354,3 +354,61 @@ textarea:focus {
 .container input:checked ~ .radiobttn:after {
     display: block;
 }
+
+#students_search > div {
+    background-color: floralwhite;
+    padding: 12px;
+    display: flex;
+    flex-direction: row;
+}
+#students_search > div > * {
+    flex-grow: 1;
+}
+#students_search span {
+    text-align: right;
+}
+#students_search > div:hover {
+    cursor: pointer;
+    background-color: burlywood;
+}
+
+#added_students > div {
+    position: relative;
+    margin: 4px;
+    padding: 12px 8px 12px 12px;
+    background-color: #673AB7;
+    border-radius: 4px;
+    color: white;
+}
+#added_students i {
+    margin: 0 4px;
+    cursor: pointer;
+    color: white;
+}
+#added_students i:hover {
+    color: #ccc;
+}
+#added_students p {
+    display: none;
+    position: absolute;
+    top: 125%;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: #333;
+    padding: 6px 12px;
+    margin: 0;
+    border-radius: 2px;
+}
+#added_students p::before {
+    content: '';
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    border-color: transparent transparent #333 transparent;
+    border-width: 4px;
+    border-style: solid;
+}
+#added_students > div:hover > p {
+    display: block;
+}
