@@ -1,8 +1,9 @@
 # Progress Tracker
 
-# `To be done for Project inspection before 24th Oct.`
+# `Goals`
 
-> Create a session that can be activated by the prof from the web and accordingly availiable to the students.  
+> Start Android development  
+> Add Graphs for during session  
 > The session also has some checkpoints.  
 > The session ends automatically according to the time given by the prof.  
 > Display output.  
@@ -13,9 +14,19 @@
 
 ## Things completed:
 ### Web
-> &#10003; login page finished
+> &#10003; login page finished  
 > 
-> &#10003; `WYSIWYG` text editor added (basic)
+> &#10003; `WYSIWYG` text editor added (basic)  
+>  
+> &#10003; Can add any number of questions of 3 different types with optional correct choices for each question  
+>  
+> &#10003; Session starts and ends automatically at the desired time  
+>  
+> &#10003; Each Session is assigned a UNIQUE session key to enter a session and no student can enter any session without having its private key
+>  
+> &#10003; Students can be added manually / (using a csv) and are automatically given private keys corresponding to each session using the database  
+>  
+> &#10003; No two students have same key for same session to prevent passing of key from let's say a student in the examination hall to a student sitting in his hostel, while the instructor has facility to generate keys for every student for his session. *Approach Used* &mdash; `student_key = md5(session_key + LDAP)`  
 
 ***
 ### Android
@@ -26,27 +37,23 @@
 
 ### Web
 
-> `customize sidebar, topbar and functionalities`  
 
 * Work on `LaTeX bug` in text editor
 * Add facility for previous assignment results
 * Add webpage to track progress `(Graphs, pie charts etc.)`
-* Add checkboxes, radio buttons and questions with input text
 
 ***
 ### Android
 
 * Display the iframe html content downloaded from server (`problem statement`)
 * `Register User`
+
 ***
 
 #### Possible extra things:
 * Parse text editor data to prevent `script injection`
 * Background for login page in `android`
-* use `SVG` for graphs and charts
 
 ***
 
-
-[login page](https://www.cse.iitb.ac.in/~sauravyad/progress_tracker/login.php) ``{username: 170050059, password: pass}`` are the credentials for now  
-[dashboard](https://www.cse.iitb.ac.in/~sauravyad/progress_tracker/dashboard.php)
+Guest Account credentials - `Username - admin, Password - admin`

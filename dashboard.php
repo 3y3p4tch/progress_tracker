@@ -96,7 +96,7 @@ if(isset($_POST['new_session'])) {
 		}
 		else {
 			$keys = json_decode($keys);
-			array_push($keys, array('key' => $session_key, 'time' => $time->format('Y-m-d h:i:s')));
+			array_push($keys, array('key' => md5($session_key.$student), 'time' => $time->format('Y-m-d h:i:s')));
 			$sql = 'UPDATE students SET keys = ? WHERE LDAP = ?';
 			$stmt = sqlsrv_query($conn, $sql, array(json_encode($keys), $student));
 			if ($stmt === false) {
@@ -105,7 +105,8 @@ if(isset($_POST['new_session'])) {
 			}
 		}
 	}
-	echo "Successfully submitted details. Your session Key is ".$session_key;
+	echo "Successfully submitted details. Your session Key is ".$session_key.". \
+	If any student needs to join the session later on, give him/her md5(<thisKey> + <his/her LDAP>) as the key to login for the session";
 	exit();
 }
 
