@@ -56,8 +56,6 @@ if (isset($_POST['get_checkpoints'])) {
 	echo json_encode($answer);
 	exit();
 }
-
-$_SESSION['session_id'] = $_GET['identifier'];
 ?>
 
 <!doctype html>
@@ -80,7 +78,7 @@ $_SESSION['session_id'] = $_GET['identifier'];
 	<input id='sidebar-toggle-checkbox' type='checkbox' style='display: none'>
 	<div id="topnav" class='clearfix'>
 		<label for='sidebar-toggle-checkbox'><h3 id='sidebar-toggle' style='color: white; float: left; margin: 0 25px; cursor: pointer; line-height: 48px'><i class="fas fa-bars"></i></h3></label>
-		<div id='logo' style="background-color: rgba(0,0,0,0); color: white; float: left; padding: 0 16px; font-family: 'Cinzel Decorative'; user-select: none;">
+		<div id='logo' onclick='window.location.assign("./dashboard.php")' style="cursor: pointer; background-color: rgba(0,0,0,0); color: white; float: left; padding: 0 16px; font-family: 'Cinzel Decorative'; user-select: none;">
 			Voodle
 		</div>
 		<div id='_' style='float: right; color: white; position: relative;'>
