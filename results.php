@@ -23,7 +23,7 @@ if(isset($_POST['update_sidebar'])) {
 		echo json_encode(array('message' => "Server not Reachable"));
 		exit();
 	}
-	$sql = "SELECT session_name, start_time, end_time FROM sessions_ INNER JOIN instructors ON sessions_.userID = instructors.userID WHERE sessions_.userID = ?";
+	$sql = "SELECT session_name, session_id, start_time, end_time FROM sessions_ INNER JOIN instructors ON sessions_.userID = instructors.userID WHERE sessions_.userID = ?";
 	$stmt = sqlsrv_query($conn, $sql, array($_SESSION['userID']));
 	if ($stmt === false) {
 		echo json_encode(array('message' => "Server Error"));
@@ -31,11 +31,33 @@ if(isset($_POST['update_sidebar'])) {
 	}
 	$answer = array();
 	while( $row = sqlsrv_fetch_array( $stmt) ) {
-    	array_push($answer, array('name' => $row['session_name'], 'start' => $row['start_time']->format('Y-m-d H:i:s'), 'end' => $row['end_time']->format('Y-m-d H:i:s')));
+    	array_push($answer, array('name' => $row['session_name'], 'unique_identifier' => $row['session_id'], 'start' => $row['start_time']->format('Y-m-d H:i:s'), 'end' => $row['end_time']->format('Y-m-d H:i:s')));
 	}
 	echo json_encode(array('sessions' => $answer, 'now' => time()));
 	exit();
 }
+
+if (isset($_POST['get_checkpoints'])) {
+	$conn = sqlsrv_connect('LAPTOP-DJ46JC9S', array( "Database"=>"voodle", "UID"=>"voodle", "PWD"=>"KanekiK" ));
+	if ($conn === false) {
+		echo json_encode(array('message' => "Server not Reachable"));
+		exit();
+	}
+	$sql = "SELECT question_no FROM questions INNER JOIN sessions_ ON questions.session_id = sessions_.session_id WHERE questions.session_id = ? AND is_checkpoint = 1";
+	$stmt = sqlsrv_query($conn, $sql, array($_SESSION['session_id']));
+	if ($stmt === false) {
+		echo json_encode(array('message' => "Server Error"));
+		exit();
+	}
+	$answer = array();
+	while ($row = sqlsrv_fetch_array($stmt)) {
+		array_push($answer, $row[0]);
+	}
+	echo json_encode($answer);
+	exit();
+}
+
+$_SESSION['session_id'] = $_GET['identifier'];
 ?>
 
 <!doctype html>
@@ -90,15 +112,15 @@ if(isset($_POST['update_sidebar'])) {
 						}
 						else for(var i = 0; i < sessions.length; i++) {
 							if ((new Date(sessions[i]['start']) <= new Date(response['now']*1000)) && (new Date(response['now']*1000) <= new Date(new Date(sessions[i]['end'])))) {
-								$('#sessions_list').append('<li><span style="display: inline-block; overflow: hidden; max-width: calc(100% - 2em); white-space: nowrap; text-overflow: ellipsis">'+sessions[i]['name']+'</span><i class="fas fa-feather-alt clearfix" style="float: right;"></i></li>');
+								$('#sessions_list').append('<li identifier="'+sessions[i]['unique_identifier']+'"><span style="display: inline-block; overflow: hidden; max-width: calc(100% - 2em); white-space: nowrap; text-overflow: ellipsis">'+sessions[i]['name']+'</span><i class="fas fa-feather-alt clearfix" style="float: right;"></i></li>');
 								$('#sessions_list li:nth-child('+(i+2)+')').on('click', function() {
-									window.location.assign('/results.php?name='+escape($(this).children().html()));
+									window.location.assign('/results.php?identifier='+escape($(this).children().attr('identifier')));
 								});
 							}
 							else {
-								$('#sessions_list').append('<li style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding-right: 0.5em">'+sessions[i]['name']+'</li>');
+								$('#sessions_list').append('<li identifier="'+sessions[i]['unique_identifier']+'" style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding-right: 0.5em">'+sessions[i]['name']+'</li>');
 								$('#sessions_list li:nth-child('+(i+2)+')').on('click', function() {
-									window.location.assign('/results.php?name='+escape($(this).html()));
+									window.location.assign('/results.php?identifier='+escape($(this).attr('identifier')));
 								});
 							}
 						}
@@ -111,6 +133,15 @@ if(isset($_POST['update_sidebar'])) {
 		}
 		update_sidebar();
 		setInterval(update_sidebar, 2000);
+
+		$.ajax({
+			type: 'POST',
+			url: <?php echo "'".$_SERVER['PHP_SELF']."'";?>,
+			data: 'get_checkpoints',
+			success: function(msg) {
+				console.log(msg);
+			}
+		});
 		</script>
 		<div id='site'>
 		
