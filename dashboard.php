@@ -31,7 +31,7 @@ if(isset($_POST['update_sidebar'])) {
 	}
 	$answer = array();
 	while( $row = sqlsrv_fetch_array( $stmt) ) {
-    	array_push($answer, array('name' => $row['session_name'], 'start' => $row['start_time']->format('Y-m-d h:i:s'), 'end' => $row['end_time']->format('Y-m-d h:i:s')));
+    	array_push($answer, array('name' => $row['session_name'], 'start' => $row['start_time']->format('Y-m-d H:i:s'), 'end' => $row['end_time']->format('Y-m-d H:i:s')));
 	}
 	echo json_encode(array('sessions' => $answer, 'now' => time()));
 	exit();
@@ -105,8 +105,7 @@ if(isset($_POST['new_session'])) {
 			}
 		}
 	}
-	echo "Successfully submitted details. Your session Key is ".$session_key.". \
-	If any student needs to join the session later on, give him/her md5(<thisKey> + <his/her LDAP>) as the key to login for the session";
+	echo "Successfully submitted details. Your session Key is ".$session_key.". If any student needs to join the session later on, give him/her md5(<thisKey> + <his/her LDAP>) as the key to login for the session";
 	exit();
 }
 
@@ -133,7 +132,7 @@ if (isset($_POST['find_students'])) {
 if (isset($_FILES[$_SESSION['username']])) {
 	move_uploaded_file($_FILES[$_SESSION['username']]['tmp_name'], 'csv_uploads\\'.$_SESSION['username']);
 	echo exec('"C:\Users\Saurav Yadav\AppData\Local\Programs\Python\Python37-32\python.exe" students.py csv_uploads\\'.$_SESSION['username']);
-	unlink($_SESSION['username']); //delete the file after it is processed.
+	unlink('csv_uploads\\'.$_SESSION['username']); //delete the file after it is processed.
 	exit();
 }
 
@@ -254,7 +253,7 @@ if (isset($_FILES[$_SESSION['username']])) {
 					<input id='s_input' style='box-sizing: border-box; border: 1px solid grey; border-radius: 2px; box-shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 1px 1px rgba(0,0,0,0.16); min-width: 0'>
 					<!-- tabindex for focus property -->
 					<!-- max-height in calc gives max results after which it scrolls -->
-					<div id='students_search' tabindex='-1' style='position: absolute; z-index: 10; bottom: 100%; left: 0; width: 100%; max-height: calc(5*(24px + 1em)); overflow: auto'></div>
+					<div id='students_search' tabindex='-1' style='position: absolute; z-index: 10; bottom: 100%; left: 0; width: 100%; max-height: calc(5*(24px + 1em)); overflow: auto; box-shadow: 1px 1px 3px rgba(0,0,0,0.12), -1px -1px 3px rgba(0,0,0,0.12); background: white'></div>
 				</div>
 				<div style='margin: 8px'>OR</div>
 				<label style='padding: 0.5em; background-color: #673AB7; color: white; cursor: pointer; margin: 8px 0 8px 8px'><i class='fas fa-file-csv' style='padding: 0 0.5em'></i><input type='file' id='s_file' accept='.csv' style='display: none'><span id='sf_name'>Upload a file</span></label>

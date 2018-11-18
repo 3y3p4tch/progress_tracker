@@ -26,12 +26,12 @@ if(isset($_POST['update_sidebar'])) {
 	$sql = "SELECT session_name, start_time, end_time FROM sessions_ INNER JOIN instructors ON sessions_.userID = instructors.userID WHERE sessions_.userID = ?";
 	$stmt = sqlsrv_query($conn, $sql, array($_SESSION['userID']));
 	if ($stmt === false) {
-		echo "Server Error";
+		echo json_encode(array('message' => "Server Error"));
 		exit();
 	}
 	$answer = array();
 	while( $row = sqlsrv_fetch_array( $stmt) ) {
-    	array_push($answer, array('name' => $row['session_name'], 'start' => $row['start_time'], 'end' => $row['end_time']));
+    	array_push($answer, array('name' => $row['session_name'], 'start' => $row['start_time']->format('Y-m-d H:i:s'), 'end' => $row['end_time']->format('Y-m-d H:i:s')));
 	}
 	echo json_encode(array('sessions' => $answer, 'now' => time()));
 	exit();
@@ -74,6 +74,8 @@ if(isset($_POST['update_sidebar'])) {
 		<!-- For updating sidebar every 2 seconds -->
 		<script>
 		async function update_sidebar () {
+			if ($('#sessions_list > span > i').hasClass('fa-angle-right')) return;
+			if ($('#sidebar-toggle-checkbox').prop('checked')) return;
 			var xhttp = new XMLHttpRequest();
 			xhttp.onreadystatechange = function() {
 				if (this.readyState == 4 && this.status == 200) {
@@ -87,10 +89,10 @@ if(isset($_POST['update_sidebar'])) {
 							$('#sessions_list').append('<li><i class="fas fa-plus" style="margin: 0 8px 0 0"></i>Create a session</li>');
 						}
 						else for(var i = 0; i < sessions.length; i++) {
-							if ((new Date(sessions[i]['start']['date']) <= new Date(response['now']*1000)) && (new Date(response['now']*1000) <= new Date(new Date(sessions[i]['end']['date'])))) {
+							if ((new Date(sessions[i]['start']) <= new Date(response['now']*1000)) && (new Date(response['now']*1000) <= new Date(new Date(sessions[i]['end'])))) {
 								$('#sessions_list').append('<li><span style="display: inline-block; overflow: hidden; max-width: calc(100% - 2em); white-space: nowrap; text-overflow: ellipsis">'+sessions[i]['name']+'</span><i class="fas fa-feather-alt clearfix" style="float: right;"></i></li>');
 								$('#sessions_list li:nth-child('+(i+2)+')').on('click', function() {
-									window.location.assign('/results.php?name='+escape($(this).children(0).html()));
+									window.location.assign('/results.php?name='+escape($(this).children().html()));
 								});
 							}
 							else {
@@ -103,7 +105,7 @@ if(isset($_POST['update_sidebar'])) {
 					}
 				}
 			};
-			xhttp.open("POST", "./dashboard.php" , true);
+			xhttp.open("POST", "<?php echo $_SERVER['PHP_SELF']?>" , true);
 			xhttp.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
 			xhttp.send("update_sidebar");
 		}

@@ -1,14 +1,13 @@
 $(function () {
 	// To expand lists in sidebar
-	$('#sessions_list i.fas.fa-angle-right').on('click', function () {
-		$(this).removeClass('fa-angle-right');
-		$(this).addClass('fa-angle-down');
-		$('#sessions_list').children('li').css('display', 'block');
-	});
-	$('#sessions_list i.fas.fa-angle-down').on('click', function () {
-		$(this).addClass('fa-angle-right');
-		$(this).removeClass('fa-angle-down');
-		$('#sessions_list').children('li').css('display', 'none');
+	$('#sessions_list span:first').on('click', function () {
+		var icon = $(this).children('i')
+		icon.toggleClass('fa-angle-right');
+		icon.toggleClass('fa-angle-down');
+		if (icon.hasClass('fa-angle-right'))
+			$('#sessions_list').children('li').css('display', 'none');
+		if (icon.hasClass('fa-angle-down'))
+			$('#sessions_list').children('li').css('display', 'block');
 	});
 
 	var iframe = document.getElementsByTagName('iframe')[0];

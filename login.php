@@ -1,14 +1,6 @@
 <!doctype <!DOCTYPE html>
 
 <?php
-function customError($errno, $errstr, $err_f, $err_l) {
-  echo "<b>Error:</b> [$errno] $errstr $err_f $err_l";
-}
-//set error handler
-set_error_handler("customError");
-// //////////////////////////////*******To be removed when login.php is complete*******///////////////////////////////////////////////////////
-/* These are our valid username and passwords */
-
 function sql_query ($user, $passwd) {
 	if ($user != '' && $passwd != '') {
 		$conn = sqlsrv_connect('LAPTOP-DJ46JC9S', array( "Database"=>"voodle", "UID"=>"voodle", "PWD"=>"KanekiK" ));

@@ -1,26 +1,12 @@
 $(function () {
 	// To expand lists in sidebar
-	var list_dropdowns = document.getElementsByClassName('expand-dropdown');
-	for (var i = 0; i < list_dropdowns.length; i++) {
-		list_dropdowns[i].firstChild.addEventListener('click', expand_ul(list_dropdowns[i]));
-	}
-	function expand_ul(element) {
-		return function () {
-			var icon = element.getElementsByTagName('i')[0];
-			if (icon.className === 'fas fa-angle-right') {
-				icon.className = 'fas fa-angle-down';
-				var li = element.getElementsByTagName('li');
-				for (var i = 0; i < li.length; i++) {
-					li[i].style.display = 'block';
-				}
-			}
-			else {
-				icon.className = 'fas fa-angle-right';
-				var li = element.getElementsByTagName('li');
-				for (var i = 0; i < li.length; i++) {
-					li[i].style.display = 'none';
-				}
-			}
-		}
-	}
+	$('#sessions_list span:first').on('click', function () {
+		var icon = $(this).children('i')
+		icon.toggleClass('fa-angle-right');
+		icon.toggleClass('fa-angle-down');
+		if (icon.hasClass('fa-angle-right'))
+			$('#sessions_list').children('li').css('display', 'none');
+		if (icon.hasClass('fa-angle-down'))
+			$('#sessions_list').children('li').css('display', 'block');
+	});
 })

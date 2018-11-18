@@ -398,6 +398,7 @@ textarea:focus {
     padding: 6px 12px;
     margin: 0;
     border-radius: 2px;
+    z-index: 1;
 }
 #added_students p::before {
     content: '';
