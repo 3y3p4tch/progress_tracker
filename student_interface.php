@@ -6,15 +6,16 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 			echo json_encode(array('message' => "Server not Reachable"));
 			exit();
 		}
-		$sql = 'SELECT keys FROM students WHERE LDAP = ? AND passwd = ?';
+		$sql = 'SELECT keys, [name] FROM students WHERE LDAP = ? AND passwd = ?';
 		$stmt = sqlsrv_query($conn, $sql, array($_POST['ldap'], $_POST['password']));
 		if ($stmt == false) {
-			echo json_encode(array('message' => "Server Error"));
+			echo json_encode(array('message' => "LDAP must be integer"));
 			exit();
 		}
 		if ($row = sqlsrv_fetch_array($stmt)) {
-			$keys = $row['keys'];
-			$sql = 'SELECT instructors.username, sessions_.session_name, start_time, duration FROM sessions_ INNER JOIN instructors ON sessions_.userID = instructors.userID';
+			$name = $row['name'];
+			$keys = json_decode($row['keys']);
+			$sql = 'SELECT instructors.username, sessions_.session_name, start_time, duration FROM sessions_ INNER JOIN instructors ON sessions_.userID = instructors.userID WHERE start_time <= GETDATE() AND GETDATE() <= end_time';
 			$stmt = sqlsrv_query($conn, $sql);
 			if ($stmt == false) {
 				echo json_encode(array('message' => "Server Error"));
@@ -22,9 +23,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 			}
 			$answer = array();
 			while ($row = sqlsrv_fetch_array($stmt)) {
-				array_push($answer, array('instructor' => $row[0], 'session' => $row[1], 'start' => $row[2], 'time' => $row[3]));
+				array_push($answer, array('instructor' => $row[0], 'session' => $row[1], 'start' => $row[2]->format('Y-m-d H:i:s'), 'time' => $row[3]));
 			}
-			echo json_encode(array('keys' => $keys, 'sessions' => $answer));
+			echo json_encode(array('name' => $name, 'keys' => $keys, 'sessions' => $answer));
 			exit();
 		}
 		else {

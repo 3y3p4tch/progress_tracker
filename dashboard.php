@@ -96,7 +96,7 @@ if(isset($_POST['new_session'])) {
 		}
 		else {
 			$keys = json_decode($keys);
-			array_push($keys, array('key' => md5($session_key.$student), 'time' => $time->format('Y-m-d h:i:s')));
+			array_push($keys, array('key' => md5($session_key.$student), 'time' => $time->format('Y-m-d H:i:s')));
 			$sql = 'UPDATE students SET keys = ? WHERE LDAP = ?';
 			$stmt = sqlsrv_query($conn, $sql, array(json_encode($keys), $student));
 			if ($stmt === false) {
