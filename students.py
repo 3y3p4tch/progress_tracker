@@ -16,9 +16,9 @@ with open(sys.argv[1], 'r') as fh:
 		for name in file:
 			try:
 				temp = int(name[0])
-				cursor.execute('SELECT [name], LDAP FROM students WHERE [name] = ? OR LDAP = ?', [name[0], name[0]])
+				cursor.execute('SELECT [name], LDAP FROM students WHERE ([name] = ? OR LDAP = ?) AND LDAP != 1', [name[0], name[0]])
 			except:
-				cursor.execute('SELECT [name], LDAP FROM students WHERE [name] = ?', [name[0]])
+				cursor.execute('SELECT [name], LDAP FROM students WHERE [name] = ? AND LDAP != 1', [name[0]])
 			ldaps = cursor.fetchall()
 			if len(ldaps) == 0:
 				raise Exception('Error: No student found with the name/ldap = \''+name[0]+'\'')

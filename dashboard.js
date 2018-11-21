@@ -35,18 +35,17 @@ $(function () {
 			// Use MathJax.Hub.Typeset() to re-run typesetting
 		});
 	};
-	function removeTypeset() {
+	function toggleTypeset() {
 		var HTML = iframe.contentWindow.MathJax.HTML, jax = iframe.contentWindow.MathJax.Hub.getAllJax();
 		for (var i = 0, m = jax.length; i < m; i++) {
 			var script = jax[i].SourceElement(), tex = jax[i].originalText;
 			if (script.type.match(/display/)) { tex = "\\[" + tex + "\\]" } else { tex = "$" + tex + "$" }
 			jax[i].Remove();
 			var preview = script.previousSibling;
-			if (preview && preview.className === "MathJax_Preview") {
-				preview.parentNode.removeChild(preview);
-			}
-			preview = HTML.Element("span", { className: "MathJax_Preview" }, [tex]);
+			script.parentNode.removeChild(preview);
+			preview = document.createTextNode(tex);
 			script.parentNode.insertBefore(preview, script);
+			script.parentNode.removeChild(script);
 		}
 	}
 	var mathjax_show = false;
@@ -55,18 +54,15 @@ $(function () {
 			mathjax_show = false;
 			$('#preview_latex').css({ 'background': 'springgreen', 'color': 'black' });
 			$('#preview_latex').html('Preview LaTeX');
+			toggleTypeset();
 		}
 		else {
 			mathjax_show = true;
 			$('#preview_latex').css({ 'background': '#F44336', 'color': 'floralwhite' });
 			$('#preview_latex').html('View Code');
+			iframe.contentWindow.MathJax.Hub.Typeset();
 		}
-		showTypeset(mathjax_show);
 	});
-
-	function showTypeset(show) {
-		show ? iframe.contentWindow.MathJax.Hub.Typeset() : iframe.contentWindow.MathJax.Hub.Queue(removeTypeset);
-	}
 	
 	var font_css = iframe.contentDocument.createElement('link');
 	font_css.rel = 'stylesheet';

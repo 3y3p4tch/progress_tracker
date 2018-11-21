@@ -56,24 +56,13 @@ if(isset($_POST['new_session'])) {
 	}
 	$id = sqlsrv_get_field( $stmt, 0);
 	$session_key = sqlsrv_get_field( $stmt, 1);
-	$c = array_shift($data->checkpoints);
 	for($i = 0; $i < sizeof($data->questions); $i++) {
-		if ($c === $i + 1) {
-			$c = array_shift($data->checkpoints);
-			$sql = "INSERT INTO questions (session_id, question_no, problem, options, correct, is_checkpoint, [type]) VALUES (?, ?, ?, ?, ?, 1, ?)";
-			$stmt = sqlsrv_query($conn, $sql, array($id, $i+1, $data->questions[$i]->problem_statement, json_encode($data->questions[$i]->options), json_encode($data->questions[$i]->correct), $data->questions[$i]->type));
-			if ($stmt === false) {
-				echo "Server Error";
-				exit();
-			}
-		}
-		else {
-			$sql = "INSERT INTO questions (session_id, question_no, problem, options, correct, [type]) VALUES (?, ?, ?, ?, ?, ?)";
-			$stmt = sqlsrv_query($conn, $sql, array($id, $i+1, $data->questions[$i]->problem_statement, json_encode($data->questions[$i]->options), json_encode($data->questions[$i]->correct), $data->questions[$i]->type));
-			if ($stmt === false) {
-				echo "Server Error";
-				exit();
-			}
+		$c = array_shift($data->checkpoints);
+		$sql = "INSERT INTO questions (session_id, question_no, problem, options, [type]) VALUES (?, ?, ?, ?, ?)";
+		$stmt = sqlsrv_query($conn, $sql, array($id, $i+1, $data->questions[$i]->problem_statement, json_encode($data->questions[$i]->options), $data->questions[$i]->type));
+		if ($stmt === false) {
+			echo "Server Error";
+			exit();
 		}
 	}
 	for($i = 0; $i < sizeof($data->students); $i++) {
@@ -115,7 +104,7 @@ if (isset($_POST['find_students'])) {
 		echo json_encode(array('message' => "Server not Reachable"));
 		exit();
 	}
-	$sql = "SELECT [name], LDAP FROM students WHERE [name] LIKE '%' + ? + '%' OR LDAP LIKE ? + '%'";
+	$sql = "SELECT [name], LDAP FROM students WHERE ([name] LIKE '%' + ? + '%' OR LDAP LIKE ? + '%') AND LDAP != 1";
 	$stmt = sqlsrv_query($conn, $sql, array($_POST['find_students'], $_POST['find_students']));
 	if ($stmt === false) {
 		echo json_encode(array('message' => "Server Error"));
@@ -369,11 +358,10 @@ if (isset($_FILES[$_SESSION['username']])) {
 					return '<div id="temp'+c+'" style=\'position: relative\' type_of_question="scq"><h3>Question '+c+'</h3>\
 					<textarea placeholder="write your question here" rows="1" spellcheck=false></textarea>\
 					<i id="icon'+c+'" class="far fa-trash-alt" style="font-size:large; position: absolute; right: 5px; top: 5px; cursor: pointer" ></i>\
-					<i id="checkpoint'+c+'" class="fas fa-flag" style="font-size:large; position: absolute; right: 5px; bottom: 5px; cursor: pointer"></i>\
-					<div><label class="container"><input name="'+c+'"type="radio"><span class="radiobttn"></span><input></label></div>\
-					<div><label class="container"><input name="'+c+'"type="radio"><span class="radiobttn"></span><input></label></div>\
-					<div><label class="container"><input name="'+c+'"type="radio"><span class="radiobttn"></span><input></label></div>\
-					<div><label class="container"><input name="'+c+'"type="radio"><span class="radiobttn"></span><input></label></div>\
+					<div><label class="container"><input name="'+c+'"type="radio" disabled><span class="radiobttn"></span><input></label></div>\
+					<div><label class="container"><input name="'+c+'"type="radio" disabled><span class="radiobttn"></span><input></label></div>\
+					<div><label class="container"><input name="'+c+'"type="radio" disabled><span class="radiobttn"></span><input></label></div>\
+					<div><label class="container"><input name="'+c+'"type="radio" disabled><span class="radiobttn"></span><input></label></div>\
 					</div>';
 				}
 				function construct_mcq(c) {
@@ -381,11 +369,10 @@ if (isset($_FILES[$_SESSION['username']])) {
 					return '<div id="temp'+c+'" style=\'position: relative\' type_of_question="mcq"><h3>Question '+c+'</h3>\
 					<textarea placeholder="write your question here" rows="1" spellcheck=false></textarea>\
 					<i id="icon'+c+'" class="far fa-trash-alt" style="font-size:large; position: absolute; right: 5px; top: 5px; cursor: pointer" ></i>\
-					<i id="checkpoint'+c+'" class="fas fa-flag" style="font-size:large; position: absolute; right: 5px; bottom: 5px; cursor: pointer"></i>\
-					<div><label class="container"><input name="'+c+'1"type="checkbox"><span class="checkmark"></span><input></label></div>\
-					<div><label class="container"><input name="'+c+'2"type="checkbox"><span class="checkmark"></span><input></label></div>\
-					<div><label class="container"><input name="'+c+'3"type="checkbox"><span class="checkmark"></span><input></label>\
-					<div><label class="container"><input name="'+c+'4"type="checkbox"><span class="checkmark"></span><input></label>\
+					<div><label class="container"><input name="'+c+'1"type="checkbox" disabled><span class="checkmark"></span><input></label></div>\
+					<div><label class="container"><input name="'+c+'2"type="checkbox" disabled><span class="checkmark"></span><input></label></div>\
+					<div><label class="container"><input name="'+c+'3"type="checkbox" disabled><span class="checkmark"></span><input></label>\
+					<div><label class="container"><input name="'+c+'4"type="checkbox" disabled><span class="checkmark"></span><input></label>\
 					</div>';
 				}
 				function construct_sat(c) {
@@ -393,7 +380,6 @@ if (isset($_FILES[$_SESSION['username']])) {
 					return '<div id="temp'+c+'" style=\'position: relative\' type_of_question="sat"><h3>Question '+c+'</h3>\
 					<textarea placeholder="write your question here" rows="1" spellcheck=false></textarea>\
 					<i id="icon'+c+'" class="far fa-trash-alt" style="font-size:large; position: absolute; right: 5px; top: 5px; cursor: pointer" ></i>\
-					<i id="checkpoint'+c+'" class="fas fa-flag" style="font-size:large; position: absolute; right: 5px; bottom: 5px; cursor: pointer"></i>\
 					</div>';
 				}
 				function remove_question(num) {
@@ -401,7 +387,6 @@ if (isset($_FILES[$_SESSION['username']])) {
 					for(var i = num+1; i <= count; i++) {
 						$("#temp"+i+" h3").html('Question '+(i-1));
 						$("#temp"+i+" .fa-trash-alt").attr('id', 'icon'+(i-1));
-						$("#temp"+i+" .fa-flag").attr('id', 'checkpoint'+(i-1));
 						$('#temp'+i).attr('id','temp'+(i-1));
 					}
 					count--;
@@ -414,7 +399,6 @@ if (isset($_FILES[$_SESSION['username']])) {
 					$('#temp'+(count-1)+' textarea').on('keydown', function () { delayedResize_textarea($(this)); });
 					$('#temp'+(count-1)+' textarea').on('drop', function () { delayedResize_textarea($(this)); });
 					$('#temp'+(count-1)+' textarea').on('paste', function () { delayedResize_textarea($(this)); });
-					$('#checkpoint'+(count-1)).on('click', function () {$(this).toggleClass('checkpoint')});
 					// De-select radio button on ctrl-click
 					$('#temp'+(count-1)+' input[type=radio]').on('click', function (e) {
 						if (e.ctrlKey) $(this).prop('checked', false);
@@ -428,7 +412,6 @@ if (isset($_FILES[$_SESSION['username']])) {
 					$('#temp'+(count-1)+' textarea').on('keydown', function () { delayedResize_textarea($(this)); });
 					$('#temp'+(count-1)+' textarea').on('drop', function () { delayedResize_textarea($(this)); });
 					$('#temp'+(count-1)+' textarea').on('paste', function () { delayedResize_textarea($(this)); });
-					$('#checkpoint'+(count-1)).on('click', function () {$(this).toggleClass('checkpoint')});
 				});
 				$('#sat').on('click', function () {
 					$(construct_sat(count)).insertBefore(question);
@@ -438,10 +421,10 @@ if (isset($_FILES[$_SESSION['username']])) {
 					$('#temp'+(count-1)+' textarea').on('keydown', function () { delayedResize_textarea($(this)); });
 					$('#temp'+(count-1)+' textarea').on('drop', function () { delayedResize_textarea($(this)); });
 					$('#temp'+(count-1)+' textarea').on('paste', function () { delayedResize_textarea($(this)); });
-					$('#checkpoint'+(count-1)).on('click', function () {$(this).toggleClass('checkpoint')});
 				});
 				// For submit button
 				document.getElementById('submit').addEventListener('click', function() {
+					document.getElementById('iframe').contentWindow.MathJax.Hub.Typeset();
 					var questions = [];
 					for(var i = 1; i < count; i++) {
 						var options = [];
@@ -457,11 +440,6 @@ if (isset($_FILES[$_SESSION['username']])) {
 						}
 						questions.push({'problem_statement': $('#temp'+i+' textarea').val(), 'type': $('#temp'+i).attr('type_of_question'), 'options' : options, 'correct' : correct});
 					}
-					var checkpoints = [];
-					for(var i = 1; i < count; i++) {
-						if ($('#checkpoint'+i).hasClass('checkpoint'))
-							checkpoints.push(i);
-					}
 					var students = [];
 					$('#added_students span').each(function(i) {
 						students.push($(this).html());
@@ -471,7 +449,6 @@ if (isset($_FILES[$_SESSION['username']])) {
 						'duration': parseInt($('#duration1').val()) * 60 + parseInt($('#duration2').val()),
 						'main_text': $('iframe').contents().find('body').html(),
 						'questions': questions,
-						'checkpoints': checkpoints,
 						'start_time': $('#start_time').val(),
 						'students': students
 					};
