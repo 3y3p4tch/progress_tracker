@@ -6,7 +6,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 			echo json_encode(array('message' => "Server not Reachable"));
 			exit();
 		}
-		$sql = 'SELECT keys, [name] FROM students WHERE LDAP = ? AND passwd = ?';
+		$sql = 'SELECT [name], keys FROM students WHERE LDAP = ? AND passwd = ?';
 		$stmt = sqlsrv_query($conn, $sql, array($_POST['ldap'], $_POST['password']));
 		if ($stmt == false) {
 			echo json_encode(array('message' => "LDAP must be integer"));
@@ -14,22 +14,78 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 		}
 		if ($row = sqlsrv_fetch_array($stmt)) {
 			$name = $row['name'];
-			$keys = json_decode($row['keys']);
-			$sql = 'SELECT instructors.username, sessions_.session_name, start_time, duration FROM sessions_ INNER JOIN instructors ON sessions_.userID = instructors.userID WHERE start_time <= GETDATE() AND GETDATE() <= end_time';
-			$stmt = sqlsrv_query($conn, $sql);
+			$keys_b4 = json_decode($row['keys']);
+			$keys_after = array();
+			for($i = 0; $i < sizeOf($keys_b4); $i++) {
+				if (new DateTime($keys_b4[$i]->time) >= new DateTime()) {
+					array_push($keys_after, $keys_b4[$i]);
+				}
+			}
+			$sql = 'UPDATE students SET keys = ? WHERE LDAP = ?';
+			$stmt = sqlsrv_query($conn, $sql, array(json_encode($keys_after), $_POST['ldap']));
 			if ($stmt == false) {
 				echo json_encode(array('message' => "Server Error"));
 				exit();
 			}
 			$answer = array();
-			while ($row = sqlsrv_fetch_array($stmt)) {
-				array_push($answer, array('instructor' => $row[0], 'session' => $row[1], 'start' => $row[2]->format('Y-m-d H:i:s'), 'time' => $row[3]));
+			$sql = 'SELECT instructors.username, sessions_.session_name, start_time, duration, session_id FROM sessions_ INNER JOIN instructors ON sessions_.userID = instructors.userID WHERE start_time <= GETDATE() AND GETDATE() <= end_time';
+			$stmt = sqlsrv_query($conn, $sql);
+			if ($stmt == false) {
+				echo json_encode(array('message' => "Server Error"));
+				exit();
 			}
-			echo json_encode(array('name' => $name, 'keys' => $keys, 'sessions' => $answer));
+			while ($row = sqlsrv_fetch_array($stmt)) {
+				array_push($answer, array('instructor' => $row[0], 'session' => $row[1], 'time' => $row[3], 'identifier' => $row[4]));
+			}
+			echo json_encode(array('name' => $name, 'sessions' => $answer, 'keys' => $keys_after));
 			exit();
 		}
 		else {
 			echo json_encode(array('message' => 'Invalid Credentials'));
+			exit();
+		}
+	}
+	else if (isset($_POST['ldap']) && isset($_POST['identifier'])) {
+		$conn = sqlsrv_connect('LAPTOP-DJ46JC9S', array( "Database"=>"voodle", "UID"=>"voodle", "PWD"=>"KanekiK" ));
+		if ($conn === false) {
+			echo json_encode(array('message' => "Server not Reachable"));
+			exit();
+		}
+		$sql = 'SELECT username, duration, session_name, details FROM sessions_ INNER JOIN instructors ON instructors.userID = sessions_.userID WHERE sessions_.session_id = ? AND start_time <= GETDATE() AND GETDATE() <= end_time';
+		$stmt = sqlsrv_query($conn, $sql, array($_POST['identifier']));
+		if ($stmt == false) {
+			echo json_encode(array('message' => "Server Error"));
+			exit();
+		}
+		if ($row = sqlsrv_fetch_array($stmt)) {
+			echo json_encode(array('instructor' => $row['username'], 'instruction' => $row['details'], 'time' => $row['duration'], 'session' => $row['session_name']));
+			exit();
+		}
+		else {
+			echo json_encode(array('message' => 'You are not allowed to enter this session or the session has expired'));
+			exit();
+		}
+	}
+	else if (isset($_POST['ldap']) && isset($_POST['question_data'])) {
+		$conn = sqlsrv_connect('LAPTOP-DJ46JC9S', array( "Database"=>"voodle", "UID"=>"voodle", "PWD"=>"KanekiK" ));
+		if ($conn === false) {
+			echo json_encode(array('message' => "Server not Reachable"));
+			exit();
+		}
+		$sql = 'SELECT problem, options, is_checkpoint, [type] FROM questions INNER JOIN sessions_ ON sessions_.session_id = questions.session_id WHERE question_no = ? AND questions.session_id = ? AND start_time <= GETDATE() AND GETDATE() <= end_time';
+		$question = json_decode($_POST['question_data'])[1];
+		$session = json_decode($_POST['question_data'])[0];
+		$stmt = sqlsrv_query($conn, $sql, array($question, $session));
+		if ($stmt == false) {
+			echo json_encode(array('message' => "Server Error"));
+			exit();
+		}
+		if ($row = sqlsrv_fetch_array($stmt)) {
+			echo json_encode(array('problem' => $row['problem'], 'options' => $row['options'], 'is_checkpoint' => $row['is_checkpoint'], 'type' => $row['type']));
+			exit();
+		}
+		else {
+			echo json_encode(array('message' => 'You are not allowed to enter this session or the session has expired'));
 			exit();
 		}
 	}

@@ -60,16 +60,16 @@ if(isset($_POST['new_session'])) {
 	for($i = 0; $i < sizeof($data->questions); $i++) {
 		if ($c === $i + 1) {
 			$c = array_shift($data->checkpoints);
-			$sql = "INSERT INTO questions (userID, session_id, question_no, problem, options, correct, is_checkpoint) VALUES (?, ?, ?, ?, ?, ?, 1)";
-			$stmt = sqlsrv_query($conn, $sql, array($_SESSION['userID'], $id, $i+1, $data->questions[$i]->problem_statement, json_encode($data->questions[$i]->options), json_encode($data->questions[$i]->correct)));
+			$sql = "INSERT INTO questions (session_id, question_no, problem, options, correct, is_checkpoint, [type]) VALUES (?, ?, ?, ?, ?, 1, ?)";
+			$stmt = sqlsrv_query($conn, $sql, array($id, $i+1, $data->questions[$i]->problem_statement, json_encode($data->questions[$i]->options), json_encode($data->questions[$i]->correct), $data->questions[$i]->type));
 			if ($stmt === false) {
 				echo "Server Error";
 				exit();
 			}
 		}
 		else {
-			$sql = "INSERT INTO questions (userID, session_id, question_no, problem, options, correct) VALUES (?, ?, ?, ?, ?, ?)";
-			$stmt = sqlsrv_query($conn, $sql, array($_SESSION['userID'], $id, $i+1, $data->questions[$i]->problem_statement, json_encode($data->questions[$i]->options), json_encode($data->questions[$i]->correct)));
+			$sql = "INSERT INTO questions (session_id, question_no, problem, options, correct, [type]) VALUES (?, ?, ?, ?, ?, ?)";
+			$stmt = sqlsrv_query($conn, $sql, array($id, $i+1, $data->questions[$i]->problem_statement, json_encode($data->questions[$i]->options), json_encode($data->questions[$i]->correct), $data->questions[$i]->type));
 			if ($stmt === false) {
 				echo "Server Error";
 				exit();
@@ -96,7 +96,7 @@ if(isset($_POST['new_session'])) {
 		}
 		else {
 			$keys = json_decode($keys);
-			array_push($keys, array('key' => md5($session_key.$student), 'time' => $time->format('Y-m-d H:i:s')));
+			array_push($keys, array('key' => $id, 'time' => $time->format('Y-m-d H:i:s')));
 			$sql = 'UPDATE students SET keys = ? WHERE LDAP = ?';
 			$stmt = sqlsrv_query($conn, $sql, array(json_encode($keys), $student));
 			if ($stmt === false) {
@@ -189,7 +189,7 @@ if (isset($_FILES[$_SESSION['username']])) {
 							if ((new Date(sessions[i]['start']) <= new Date(response['now']*1000)) && (new Date(response['now']*1000) <= new Date(new Date(sessions[i]['end'])))) {
 								$('#sessions_list').append('<li identifier="'+sessions[i]['unique_identifier']+'"><span style="display: inline-block; overflow: hidden; max-width: calc(100% - 2em); white-space: nowrap; text-overflow: ellipsis">'+sessions[i]['name']+'</span><i class="fas fa-feather-alt clearfix" style="float: right;"></i></li>');
 								$('#sessions_list li:nth-child('+(i+2)+')').on('click', function() {
-									window.location.assign('/results.php?identifier='+escape($(this).children().attr('identifier')));
+									window.location.assign('/results.php?identifier='+escape($(this).attr('identifier')));
 								});
 							}
 							else {
