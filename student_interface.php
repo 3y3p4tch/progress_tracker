@@ -53,10 +53,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 			echo json_encode(array('message' => "Server not Reachable"));
 			exit();
 		}
-		$sql = 'UPDATE questions SET comments = JSON_MODIFY(comments, "append $", ?) WHERE session_id = ? AND question_no = ?';
+		$sql = "UPDATE questions SET comments = JSON_MODIFY(comments, 'append $', JSON_QUERY(?)) WHERE session_id = ? AND question_no = ?";
 		$stmt = sqlsrv_query($conn, $sql, array($_POST['comment'], $id, $ques_no));
 		if ($stmt == false) {
-			echo json_encode(array('message' => "Server Error"));
+			// echo json_encode(array('message' => "Server Error"));
+			var_dump(sqlsrv_errors());
 			exit();
 		}
 		echo '{"done": 1}';
@@ -108,6 +109,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 	else if ($_POST['question_data'] && $_POST['active']) {
 		$session = json_decode($_POST['question_data'])[0];
 		$ldap = json_decode($_POST['question_data'])[1];
+		$conn = sqlsrv_connect('LAPTOP-DJ46JC9S', array( "Database"=>"voodle", "UID"=>"voodle", "PWD"=>"KanekiK" ));
 		if ($_POST['active'] == 0) {
 			$sql = 'UPDATE students SET [session] = NULL WHERE ldap = ?';
 			$stmt = sqlsrv_query($conn, $sql, array(ldap));
@@ -117,7 +119,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 			}
 		}
 		else if ($_POST['active'] == 1) {
-			$sql = 'UPDATE students SET [session] = ? WHERE ldap = ?';
+			$sql = 'UPDATE students SET [session] = ? WHERE LDAP = ?';
 			$stmt = sqlsrv_query($conn, $sql, array($session, $ldap));
 			if ($stmt == false) {
 				echo json_encode(array('message' => "Server Error"));

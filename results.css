@@ -130,3 +130,69 @@ body {
     overflow: auto;
     flex-grow: 1;
 }
+
+#comments {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+}
+#comments > div {
+    flex-grow: 1;
+    margin: 4px;
+    flex-basis: 300px;
+    position: relative;
+}
+#comments button {
+    background-color: orangered;
+    padding: 8px;
+    border: none;
+    outline: none;
+    width: 100%;
+    border-radius:4px 4px;
+}
+#comments > div > div {
+    background-color: #eee;
+    border-radius: 0 0 4px 4px;
+    display: none;
+}
+#comments ul {
+    display: flex;
+    flex-direction: column;
+    list-style-type: none;
+    margin: 0;
+    padding: 0;
+    position: relative;
+    width: 100%;
+    height: 400px;
+    overflow: auto;
+}
+#comments li {
+    padding: 8px 4px;
+    white-space: pre-wrap;
+    width: 90%;
+    box-sizing: border-box;
+}
+#comments li .c_comment {
+    display: block;
+    width: 100%;
+    background-color: white;
+    border-radius: 0 0 4px 4px;
+    padding-top: 10px;
+}
+#comments li .c_ldap {
+    display: block;
+    background-color: white;
+    color: purple;
+    border-radius: 4px 4px 0 0;
+    font-size: small;
+}
+#comments textarea {
+    width: 100%;
+    overflow: hidden;
+    border: 1px solid #888;
+    box-sizing: border-box;
+    outline: none;
+    resize: none;
+    padding: 4px;
+    border-radius: inherit;
+}

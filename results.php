@@ -51,7 +51,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 		}
 		$chckpt = array();
 		while( $row = sqlsrv_fetch_array( $stmt) ) {
-			array_push($chckpt, array('students_checkpoint' => $row['students_crossed'], 'comments' => $row['comments']));
+			array_push($chckpt, array('students_checkpoint' => $row['students_crossed'], 'comments' => json_decode($row['comments'])));
 		}
 		$sql = "SELECT pings.LDAP, name, message FROM pings INNER JOIN questions ON pings.ques_id = questions.ques_id INNER JOIN students ON students.LDAP = pings.LDAP WHERE questions.session_id = ?";
 		$stmt = sqlsrv_query($conn, $sql, array($_SESSION['id']));
@@ -156,9 +156,10 @@ $_SESSION['id'] = $_GET['identifier'];
 		</script>
 		<div id='site'>
 			<span id='students_online'></span>
-			<div class="chart-container" style="position: relative; height:40vh; width:70vw">
+			<div class="chart-container" style="position: relative">
 			    <canvas id="hist"></canvas>
 			</div>
+			<div id='comments' style='display: flex'></div>
 			<script>
 				var myChart = new Chart($('#hist'), {
 					type: 'bar',
@@ -206,12 +207,16 @@ $_SESSION['id'] = $_GET['identifier'];
 						if ('message' in response)
 							console.log(response['message']);
 						else {
+							var len = response.checkpoint_comments.length;
 							$('#students_online').html(response['online']);
 							var labels = [];
-							for(var i = 0; i < response.checkpoint_comments.length; i++) {
+							for(var i = 0; i < len; i++) {
 								labels.push("Ques "+(i+1));
 							}
 							myChart.data.labels = labels;
+							for (var i = 0; i < len; i++) {
+								$('#comments').append('<div><button onclick="$(this).next().toggle()">Comments on Question '+(i+1)+'</button><div><ul ques="'+i+'" style="display: flex"></ul><div style="display: flex; flex-direction: row"><textarea style="flex-grow: 1" placeholder="Comment here"></textarea><i class="fa fa-paper-plane" style="padding: 8px; font-size: larger; cursor: pointer" onclick="$(this).prev().val(\'\')" aria-hidden="true"></i></div></div></div>');
+							}
 						}
 					}
 				});
@@ -225,13 +230,21 @@ $_SESSION['id'] = $_GET['identifier'];
 							if ('message' in response)
 								console.log(response['message']);
 							else {
+								var len = response.checkpoint_comments.length;
 								$('#students_online').html(response['online']);
 								var data = [];
-								for(var i = 0; i < response.checkpoint_comments.length; i++) {
+								for(var i = 0; i < len; i++) {
 									data.push(response.checkpoint_comments[i].students_checkpoint);
 								}
 								myChart.data.datasets[0].data = data;
 								myChart.update();
+								for(var i = 0; i < len; i++) {
+								var comments = response.checkpoint_comments[i].comments;
+								$('#comments ul[ques='+i+']').empty();
+									for(var j = 0; j < comments.length; j++) {
+										$('#comments ul[ques='+i+']').append('<li><span class="c_ldap">'+comments[j]['ldap']+'</span><span class="c_comment">'+comments[j]['comment']+'</span></li>');
+									}
+								}
 							}
 						}
 					});
