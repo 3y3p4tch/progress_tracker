@@ -135,7 +135,7 @@ $_SESSION['id'] = $_GET['identifier'];
 							if ((new Date(sessions[i]['start']) <= new Date(response['now']*1000)) && (new Date(response['now']*1000) <= new Date(new Date(sessions[i]['end'])))) {
 								$('#sessions_list').append('<li identifier="'+sessions[i]['unique_identifier']+'"><span style="display: inline-block; overflow: hidden; max-width: calc(100% - 2em); white-space: nowrap; text-overflow: ellipsis">'+sessions[i]['name']+'</span><i class="fas fa-feather-alt clearfix" style="float: right;"></i></li>');
 								$('#sessions_list li:nth-child('+(i+2)+')').on('click', function() {
-									window.location.assign('/results.php?identifier='+escape($(this).children().attr('identifier')));
+									window.location.assign('/results.php?identifier='+escape($(this).attr('identifier')));
 								});
 							}
 							else {

@@ -46,8 +46,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 		}
 	}
 	else if (isset($_POST['who']) && isset($_POST['comment'])) {
-		$id = json_decode($_POST['who'])[1];
-		$ques_no = json_decode($_POST['who'])[2];
+		$id = json_decode($_POST['who'])[0];
+		$ques_no = json_decode($_POST['who'])[1];
 		$conn = sqlsrv_connect('LAPTOP-DJ46JC9S', array( "Database"=>"voodle", "UID"=>"voodle", "PWD"=>"KanekiK" ));
 		if ($conn === false) {
 			echo json_encode(array('message' => "Server not Reachable"));
@@ -59,14 +59,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 			echo json_encode(array('message' => "Server Error"));
 			exit();
 		}
-		if ($row = sqlsrv_fetch_array($stmt)) {
-			echo json_encode(array('instructor' => $row['username'], 'instruction' => $row['details'], 'time' => $row['duration'], 'session' => $row['session_name']));
-			exit();
-		}
-		else {
-			echo json_encode(array('message' => 'The session has expired, please refresh'));
-			exit();
-		}
+		echo '{"done": 1}';
 	}
 	else if (isset($_POST['ldap']) && isset($_POST['identifier'])) {
 		$conn = sqlsrv_connect('LAPTOP-DJ46JC9S', array( "Database"=>"voodle", "UID"=>"voodle", "PWD"=>"KanekiK" ));

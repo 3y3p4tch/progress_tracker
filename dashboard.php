@@ -207,12 +207,10 @@ if (isset($_FILES[$_SESSION['username']])) {
 				<div style='margin: 20px 20px 20px 0'><h3 style='display: inline-block; margin: 0 10px 0 0'>Session name </h3><input id='session_name' placeholder='For ex. SSL Project'></div>
 				<div style='margin: 20px 0;'><h3 style='display: inline-block; margin: 0 10px 0 0'>Session duration <i class='far fa-clock' style='padding: 0 2px'></i></h3><input id='duration1' style='width: 2rem; text-align: center; overflow: hidden' placeholder='hh' type='number' min='0' max='23' onchange="if(parseInt(this.value,10)<10)this.value='0'+this.value;"><b> : </b><input id='duration2' style='width: 2rem; text-align: center; overflow: hidden' placeholder='mm' type='number' min='0' max='59' onchange="if(parseInt(this.value,10)<10)this.value='0'+this.value;"></div>
 			</div>
-			<h3 style='display: inline-block; margin: 0 10px 0 0'>Start Time <i class='fas fa-calendar-alt' style='padding: 0 2px'></i></h3><input id='start_time' style='width: auto; overflow: hidden' placeholder='mm-dd-yyyy hh:mm'>
-				<script type="text/javascript">
-					$(function(){
-						$('#start_time').appendDtpicker();
-					});
-				</script>
+			<h3 style='display: inline-block; margin: 0 10px 0 0'>Start Time <i class='fas fa-calendar-alt' style='padding: 0 2px'></i></h3><input id='start_time' style='width: auto; overflow: hidden; position: relative; text-align: center' placeholder='mm-dd-yyyy hh:mm'>
+			<script>
+				$('#start_time').appendDtpicker();
+			</script>
 			<div style='width: 100%; margin: 20px 0;'>
 				<h3>Enter main text below</h3>
 				<div style='box-sizing: border-box; box-shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 1px 1px rgba(0,0,0,0.16); border-radius: 2px;'>

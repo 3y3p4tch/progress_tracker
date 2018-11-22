@@ -401,3 +401,31 @@ textarea:focus {
 #added_students > div:hover > p {
     display: block;
 }
+
+.datepicker {
+    font-family: 'quicksand' !important;
+}
+.datepicker_table td {
+    cursor: pointer;
+    padding: 4px;
+    text-align: center;
+    border-radius: 4px;
+}
+.datepicker_table .hover {
+    background-color: #eee;
+}
+.datepicker_table .today {
+    background-color: #ffcdd2;
+    border-radius: 0;
+}
+.datepicker_table .active {
+    background-color: blanchedalmond;
+}
+.datepicker_table .day_another_month {
+    color: #bbb;
+}
+.datepicker_header {
+    background-color: yellowgreen !important;
+    padding: 4px !important;
+    font-size: inherit !important;
+}
