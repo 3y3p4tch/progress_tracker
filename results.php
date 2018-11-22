@@ -237,6 +237,7 @@ $_SESSION['id'] = $_GET['identifier'];
 					});
 				};
 				var refresh = setInterval(data_update, 1000);
+				data_update();
 			</script>
 		</div>
 	</div>
