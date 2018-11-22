@@ -38,14 +38,11 @@
 ### Web
 
 
-* Work on `LaTeX bug` in text editor
 * Add facility for previous assignment results
-* Add webpage to track progress `(Graphs, pie charts etc.)`
 
 ***
 ### Android
 
-* Display the iframe html content downloaded from server (`problem statement`)
 * `Register User`
 
 ***

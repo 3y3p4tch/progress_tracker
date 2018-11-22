@@ -128,7 +128,7 @@ $_SESSION['id'] = $_GET['identifier'];
 					else {
 						var sessions = response['sessions'];
 						if (sessions.length === 0) {
-							$('#sessions_list').append('<li><i class="fas fa-plus" style="margin: 0 8px 0 0"></i>Create a session</li>');
+							$('#sessions_list').append('<li onclick="window.location.assign(\'./dashboard.php\')"><i class="fas fa-plus" style="margin: 0 8px 0 0"></i>Create a session</li>');
 						}
 						else for(var i = 0; i < sessions.length; i++) {
 							if ((new Date(sessions[i]['start']) <= new Date(response['now']*1000)) && (new Date(response['now']*1000) <= new Date(new Date(sessions[i]['end'])))) {
@@ -197,6 +197,24 @@ $_SESSION['id'] = $_GET['identifier'];
 						}
 					}
 				});
+				$.ajax({
+					type: 'POST',
+					url: <?php echo "'".$_SERVER['PHP_SELF']."'";?>,
+					data: 'update_charts',
+					success: function(msg) {
+						var response = JSON.parse(msg);
+						if ('message' in response)
+							console.log(response['message']);
+						else {
+							$('#students_online').html(response['online']);
+							var labels = [];
+							for(var i = 0; i < response.checkpoint_comments.length; i++) {
+								labels.push("Ques "+(i+1));
+							}
+							myChart.data.labels = labels;
+						}
+					}
+				});
 				function data_update() {
 					$.ajax({
 						type: 'POST',
@@ -219,24 +237,6 @@ $_SESSION['id'] = $_GET['identifier'];
 					});
 				};
 				var refresh = setInterval(data_update, 1000);
-				$.ajax({
-					type: 'POST',
-					url: <?php echo "'".$_SERVER['PHP_SELF']."'";?>,
-					data: 'update_charts',
-					success: function(msg) {
-						var response = JSON.parse(msg);
-						if ('message' in response)
-							console.log(response['message']);
-						else {
-							$('#students_online').html(response['online']);
-							var labels = [];
-							for(var i = 0; i < response.checkpoint_comments.length; i++) {
-								labels.push("Ques "+(i+1));
-							}
-							myChart.data.labels = labels;
-						}
-					}
-				})
 			</script>
 		</div>
 	</div>
