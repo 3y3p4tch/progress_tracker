@@ -139,6 +139,9 @@ if (isset($_FILES[$_SESSION['username']])) {
 	<link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Cinzel+Decorative|Josefin+Slab:400,700|Quicksand:400,700">
 	<link rel="stylesheet" type="text/css" media="screen" href="dashboard.css"/>
 	<script src="dashboard.js" async></script>
+	<script type="text/javascript" src="./assets/datepicker/jquery.simple-dtpicker.js"></script>
+	<link type="text/css" href="./assets/datepicker/jquery.simple-dtpicker.css" rel="stylesheet" />
+
 </head>
 <body>
 	<input id='sidebar-toggle-checkbox' type='checkbox' style='display: none'>
@@ -205,6 +208,11 @@ if (isset($_FILES[$_SESSION['username']])) {
 				<div style='margin: 20px 0;'><h3 style='display: inline-block; margin: 0 10px 0 0'>Session duration <i class='far fa-clock' style='padding: 0 2px'></i></h3><input id='duration1' style='width: 2rem; text-align: center; overflow: hidden' placeholder='hh' type='number' min='0' max='23' onchange="if(parseInt(this.value,10)<10)this.value='0'+this.value;"><b> : </b><input id='duration2' style='width: 2rem; text-align: center; overflow: hidden' placeholder='mm' type='number' min='0' max='59' onchange="if(parseInt(this.value,10)<10)this.value='0'+this.value;"></div>
 			</div>
 			<h3 style='display: inline-block; margin: 0 10px 0 0'>Start Time <i class='fas fa-calendar-alt' style='padding: 0 2px'></i></h3><input id='start_time' style='width: auto; overflow: hidden' placeholder='mm-dd-yyyy hh:mm'>
+				<script type="text/javascript">
+					$(function(){
+						$('#start_time').appendDtpicker();
+					});
+				</script>
 			<div style='width: 100%; margin: 20px 0;'>
 				<h3>Enter main text below</h3>
 				<div style='box-sizing: border-box; box-shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 1px 1px rgba(0,0,0,0.16); border-radius: 2px;'>
