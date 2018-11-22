@@ -15,47 +15,69 @@ if (!isset($_SESSION['username']) || !isset($_SESSION['userID'])) {
 	header('Location: login.php');
 	exit();
 }
+if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+	if(isset($_POST['update_sidebar'])) {
+		$client_time = $_POST['update_sidebar'];
+		$conn = sqlsrv_connect('LAPTOP-DJ46JC9S', array( "Database"=>"voodle", "UID"=>"voodle", "PWD"=>"KanekiK" ));
+		if ($conn === false) {
+			echo json_encode(array('message' => "Server not Reachable"));
+			exit();
+		}
+		$sql = "SELECT session_name, session_id, start_time, end_time FROM sessions_ INNER JOIN instructors ON sessions_.userID = instructors.userID WHERE sessions_.userID = ?";
+		$stmt = sqlsrv_query($conn, $sql, array($_SESSION['userID']));
+		if ($stmt === false) {
+			echo json_encode(array('message' => "Server Error"));
+			exit();
+		}
+		$answer = array();
+		while( $row = sqlsrv_fetch_array( $stmt) ) {
+			array_push($answer, array('name' => $row['session_name'], 'unique_identifier' => $row['session_id'], 'start' => $row['start_time']->format('Y-m-d H:i:s'), 'end' => $row['end_time']->format('Y-m-d H:i:s')));
+		}
+		echo json_encode(array('sessions' => $answer, 'now' => time()));
+		exit();
+	}
 
-if(isset($_POST['update_sidebar'])) {
-	$client_time = $_POST['update_sidebar'];
-	$conn = sqlsrv_connect('LAPTOP-DJ46JC9S', array( "Database"=>"voodle", "UID"=>"voodle", "PWD"=>"KanekiK" ));
-	if ($conn === false) {
-		echo json_encode(array('message' => "Server not Reachable"));
+	if (isset($_POST['update_charts'])) {
+		$conn = sqlsrv_connect('LAPTOP-DJ46JC9S', array( "Database"=>"voodle", "UID"=>"voodle", "PWD"=>"KanekiK" ));
+		if ($conn === false) {
+			echo json_encode(array('message' => "Server not Reachable"));
+			exit();
+		}
+		$sql = "SELECT comments, students_crossed FROM questions WHERE session_id = ?";
+		$stmt = sqlsrv_query($conn, $sql, array($_SESSION['id']));
+		if ($stmt === false) {
+			echo '{"message": "Server Error"}';
+			exit();
+		}
+		$chckpt = array();
+		while( $row = sqlsrv_fetch_array( $stmt) ) {
+			array_push($chckpt, array('students_checkpoint' => $row['no_of_students'], 'comments' => $row['comments']));
+		}
+		$sql = "SELECT pings.LDAP, name, message FROM pings INNER JOIN questions ON pings.ques_id = questions.ques_id INNER JOIN students ON students.LDAP = pings.LDAP WHERE questions.session_id = ?";
+		$stmt = sqlsrv_query($conn, $sql, array($_SESSION['id']));
+		if ($stmt === false) {
+			echo '{"message": "Server Error"}';
+			exit();
+		}
+		$pings = array();
+		while( $row = sqlsrv_fetch_array( $stmt) ) {
+			array_push($pings, $row);
+		}
+		$sql = "SELECT COUNT(*) FROM students WHERE [session] = ?";
+		$stmt = sqlsrv_query($conn, $sql, array($_SESSION['id']));
+		if ($stmt === false) {
+			echo '{"message": "Server Error"}';
+			exit();
+		}
+		$students = 0;
+		if ( $row = sqlsrv_fetch_array( $stmt) ) {
+			$students = $row[0];
+		}
+		echo json_encode(array('online' => $students, 'checkpoint_comments' => $chckpt, 'pings' => $pings));
 		exit();
 	}
-	$sql = "SELECT session_name, session_id, start_time, end_time FROM sessions_ INNER JOIN instructors ON sessions_.userID = instructors.userID WHERE sessions_.userID = ?";
-	$stmt = sqlsrv_query($conn, $sql, array($_SESSION['userID']));
-	if ($stmt === false) {
-		echo json_encode(array('message' => "Server Error"));
-		exit();
-	}
-	$answer = array();
-	while( $row = sqlsrv_fetch_array( $stmt) ) {
-    	array_push($answer, array('name' => $row['session_name'], 'unique_identifier' => $row['session_id'], 'start' => $row['start_time']->format('Y-m-d H:i:s'), 'end' => $row['end_time']->format('Y-m-d H:i:s')));
-	}
-	echo json_encode(array('sessions' => $answer, 'now' => time()));
-	exit();
 }
-
-if (isset($_POST['get_checkpoints'])) {
-	$conn = sqlsrv_connect('LAPTOP-DJ46JC9S', array( "Database"=>"voodle", "UID"=>"voodle", "PWD"=>"KanekiK" ));
-	if ($conn === false) {
-		echo json_encode(array('message' => "Server not Reachable"));
-		exit();
-	}
-	$sql = "SELECT question_no FROM questions INNER JOIN sessions_ ON questions.session_id = sessions_.session_id WHERE questions.session_id = ? AND is_checkpoint = 1";
-	$stmt = sqlsrv_query($conn, $sql, array($_SESSION['session_id']));
-	if ($stmt === false) {
-		echo json_encode(array('message' => "Server Error"));
-		exit();
-	}
-	$answer = array();
-	while ($row = sqlsrv_fetch_array($stmt)) {
-		array_push($answer, $row[0]);
-	}
-	echo json_encode($answer);
-	exit();
-}
+$_SESSION['id'] = $_GET['identifier'];
 ?>
 
 <!doctype html>
@@ -71,6 +93,7 @@ if (isset($_POST['get_checkpoints'])) {
 	<link href="https://fonts.googleapis.com/css?family=Cinzel+Decorative|Josefin+Slab:400,700|Quicksand:400,700" rel="stylesheet">
 	<link rel="stylesheet" type="text/css" media="screen" href="results.css" />
 	<script src='./assets/chart_module/chart.js/dist/Chart.js'></script>
+    <script data-require="bootstrap" data-semver="3.3.6" src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js"></script>
 	<script src="results.js"></script>
 </head>
 
@@ -131,18 +154,65 @@ if (isset($_POST['get_checkpoints'])) {
 		}
 		update_sidebar();
 		setInterval(update_sidebar, 2000);
-
-		$.ajax({
-			type: 'POST',
-			url: <?php echo "'".$_SERVER['PHP_SELF']."'";?>,
-			data: 'get_checkpoints',
-			success: function(msg) {
-				console.log(msg);
-			}
-		});
 		</script>
 		<div id='site'>
-		
+			<span id='students_online'></span>
+			<canvas id='hist' width='400' height='400'></canvas>
+			<script>
+				function data_update() {
+					$.ajax({
+						type: 'POST',
+						url: <?php echo "'".$_SERVER['PHP_SELF']."'";?>,
+						data: 'update_charts',
+						success: function(msg) {
+							var response = JSON.parse(msg);
+							if ('message' in response)
+								console.log(response['message']);
+							else {
+								$('#students_online').html(response['online']);
+							}
+						}
+					});
+				};
+				var refresh = setInterval(data_update, 1000);
+				data_update();
+				var myChart = new Chart($('#hist'), {
+					type: 'bar',
+					data: {
+						labels: ["Red", "Blue", "Yellow", "Green", "Purple", "Orange"],
+						datasets: [{
+							label: '# of Votes',
+							data: [12, 19, 3, 5, 2, 3],
+							backgroundColor: [
+								'rgba(255, 99, 132, 0.2)',
+								'rgba(54, 162, 235, 0.2)',
+								'rgba(255, 206, 86, 0.2)',
+								'rgba(75, 192, 192, 0.2)',
+								'rgba(153, 102, 255, 0.2)',
+								'rgba(255, 159, 64, 0.2)'
+							],
+							borderColor: [
+								'rgba(255,99,132,1)',
+								'rgba(54, 162, 235, 1)',
+								'rgba(255, 206, 86, 1)',
+								'rgba(75, 192, 192, 1)',
+								'rgba(153, 102, 255, 1)',
+								'rgba(255, 159, 64, 1)'
+							],
+							borderWidth: 1
+						}]
+					},
+					options: {
+						scales: {
+							yAxes: [{
+								ticks: {
+									beginAtZero:true
+								}
+							}]
+						}
+					}
+				});
+			</script>
 		</div>
 	</div>
 </body>
