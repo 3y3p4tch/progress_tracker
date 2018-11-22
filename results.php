@@ -1,24 +1,24 @@
 <?php
 // for logout
-if (isset($_GET['logout']) && $_GET['logout'] === 'true') {
-	setcookie('username','', time() - 3600);
-	setcookie('passwd','', time() - 3600);
-	session_start();
-	session_unset();
-	session_destroy();
-	header('location: login.php');
-	exit();
-}
+// if (isset($_GET['logout']) && $_GET['logout'] === 'true') {
+// 	setcookie('username','', time() - 3600);
+// 	setcookie('passwd','', time() - 3600);
+// 	session_start();
+// 	session_unset();
+// 	session_destroy();
+// 	header('location: login.php');
+// 	exit();
+// }
 
-session_start();
-if (!isset($_SESSION['username']) || !isset($_SESSION['userID'])) {
-	header('Location: login.php');
-	exit();
-}
+// session_start();
+// if (!isset($_SESSION['username']) || !isset($_SESSION['userID'])) {
+// 	header('Location: login.php');
+// 	exit();
+// }
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 	if(isset($_POST['update_sidebar'])) {
 		$client_time = $_POST['update_sidebar'];
-		$conn = sqlsrv_connect('LAPTOP-DJ46JC9S', array( "Database"=>"voodle", "UID"=>"voodle", "PWD"=>"KanekiK" ));
+		$conn = sqlsrv_connect('localhost', array( "Database"=>"voodle", "UID"=>"SA", "PWD"=>"Manaswi0411" ));
 		if ($conn === false) {
 			echo json_encode(array('message' => "Server not Reachable"));
 			exit();
@@ -38,7 +38,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 	}
 
 	if (isset($_POST['update_charts'])) {
-		$conn = sqlsrv_connect('LAPTOP-DJ46JC9S', array( "Database"=>"voodle", "UID"=>"voodle", "PWD"=>"KanekiK" ));
+		$conn = sqlsrv_connect('localhost', array( "Database"=>"voodle", "UID"=>"SA", "PWD"=>"Manaswi0411" ));
 		if ($conn === false) {
 			echo json_encode(array('message' => "Server not Reachable"));
 			exit();
@@ -157,7 +157,9 @@ $_SESSION['id'] = $_GET['identifier'];
 		</script>
 		<div id='site'>
 			<span id='students_online'></span>
-			<canvas id='hist' width='400' height='400'></canvas>
+			<div class="chart-container" style="position: relative; height:40vh; width:70vw">
+			    <canvas id="hist"></canvas>
+			</div>
 			<script>
 				function data_update() {
 					$.ajax({
@@ -169,49 +171,95 @@ $_SESSION['id'] = $_GET['identifier'];
 							if ('message' in response)
 								console.log(response['message']);
 							else {
+								console.log(response);
 								$('#students_online').html(response['online']);
+								var labels = [];
+								var data=[];
+								for(var i in response.checkpoint_comments) {
+									labels.push("Ques " + i);
+									data.push(response.checkpoint_comments[i].students_checkpoint);
+								}
+								var myChart = new Chart($('#hist'), {
+									type: 'bar',
+									data: {
+										labels: labels,
+										datasets: [{
+											label: 'Number of Students',
+											data: data,
+											backgroundColor: [
+												'rgba(255, 99, 132, 0.2)',
+												'rgba(54, 162, 235, 0.2)',
+												'rgba(255, 206, 86, 0.2)',
+												'rgba(75, 192, 192, 0.2)',
+												'rgba(153, 102, 255, 0.2)',
+												'rgba(255, 159, 64, 0.2)'
+											],
+											borderColor: [
+												'rgba(255,99,132,1)',
+												'rgba(54, 162, 235, 1)',
+												'rgba(255, 206, 86, 1)',
+												'rgba(75, 192, 192, 1)',
+												'rgba(153, 102, 255, 1)',
+												'rgba(255, 159, 64, 1)'
+											],
+											borderWidth: 1
+										}]
+									},
+									options: {
+										scales: {
+											yAxes: [{
+												ticks: {
+													beginAtZero:true,
+													callback: function(value) {if (value % 1 === 0) {return value;}}
+												}
+											}]
+										}
+									}
+								});
+
+
 							}
 						}
 					});
 				};
 				var refresh = setInterval(data_update, 1000);
 				data_update();
-				var myChart = new Chart($('#hist'), {
-					type: 'bar',
-					data: {
-						labels: ["Red", "Blue", "Yellow", "Green", "Purple", "Orange"],
-						datasets: [{
-							label: '# of Votes',
-							data: [12, 19, 3, 5, 2, 3],
-							backgroundColor: [
-								'rgba(255, 99, 132, 0.2)',
-								'rgba(54, 162, 235, 0.2)',
-								'rgba(255, 206, 86, 0.2)',
-								'rgba(75, 192, 192, 0.2)',
-								'rgba(153, 102, 255, 0.2)',
-								'rgba(255, 159, 64, 0.2)'
-							],
-							borderColor: [
-								'rgba(255,99,132,1)',
-								'rgba(54, 162, 235, 1)',
-								'rgba(255, 206, 86, 1)',
-								'rgba(75, 192, 192, 1)',
-								'rgba(153, 102, 255, 1)',
-								'rgba(255, 159, 64, 1)'
-							],
-							borderWidth: 1
-						}]
-					},
-					options: {
-						scales: {
-							yAxes: [{
-								ticks: {
-									beginAtZero:true
-								}
-							}]
-						}
-					}
-				});
+				// var myChart = new Chart($('#hist'), {
+				// 	type: 'bar',
+				// 	data: {
+				// 		labels: ["Red", "Blue", "Yellow", "Green", "Purple", "Orange"],
+				// 		datasets: [{
+				// 			label: '# of Votes',
+				// 			data: [12, 19, 3, 5, 2, 3],
+				// 			backgroundColor: [
+				// 				'rgba(255, 99, 132, 0.2)',
+				// 				'rgba(54, 162, 235, 0.2)',
+				// 				'rgba(255, 206, 86, 0.2)',
+				// 				'rgba(75, 192, 192, 0.2)',
+				// 				'rgba(153, 102, 255, 0.2)',
+				// 				'rgba(255, 159, 64, 0.2)'
+				// 			],
+				// 			borderColor: [
+				// 				'rgba(255,99,132,1)',
+				// 				'rgba(54, 162, 235, 1)',
+				// 				'rgba(255, 206, 86, 1)',
+				// 				'rgba(75, 192, 192, 1)',
+				// 				'rgba(153, 102, 255, 1)',
+				// 				'rgba(255, 159, 64, 1)'
+				// 			],
+				// 			borderWidth: 1
+				// 		}]
+				// 	},
+				// 	options: {
+				// 		scales: {
+				// 			yAxes: [{
+				// 				ticks: {
+				// 					beginAtZero:true
+				// 				}
+				// 			}]
+				// 		}
+				// 	}
+				// });
 			</script>
 		</div>
 	</div>
