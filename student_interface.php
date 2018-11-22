@@ -89,8 +89,8 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 			exit();
 		}
 		$sql = 'SELECT problem, options, [type], comments FROM questions INNER JOIN sessions_ ON sessions_.session_id = questions.session_id WHERE question_no = ? AND questions.session_id = ? AND start_time <= GETDATE() AND GETDATE() <= end_time';
-		$question = json_decode($_POST['question_data'])[1];
 		$session = json_decode($_POST['question_data'])[0];
+		$question = json_decode($_POST['question_data'])[1];
 		$stmt = sqlsrv_query($conn, $sql, array($question, $session));
 		if ($stmt == false) {
 			echo json_encode(array('message' => "Server Error"));
@@ -102,6 +102,41 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 		}
 		else {
 			echo json_encode(array('message' => 'You are not allowed to enter this session or the session has expired'));
+			exit();
+		}
+	}
+	else if ($_POST['question_data'] && $_POST['active']) {
+		$session = json_decode($_POST['question_data'])[0];
+		$ldap = json_decode($_POST['question_data'])[1];
+		if ($_POST['active'] == 0) {
+			$sql = 'UPDATE students SET [session] = NULL WHERE ldap = ?';
+			$stmt = sqlsrv_query($conn, $sql, array(ldap));
+			if ($stmt == false) {
+				echo json_encode(array('message' => "Server Error"));
+				exit();
+			}
+		}
+		else if ($_POST['active'] == 1) {
+			$sql = 'UPDATE students SET [session] = ? WHERE ldap = ?';
+			$stmt = sqlsrv_query($conn, $sql, array($session, $ldap));
+			if ($stmt == false) {
+				echo json_encode(array('message' => "Server Error"));
+				exit();
+			}
+		}
+	}
+	else if (isset($_POST['question_data']) && isset($_POST['attempted'])) {
+		$conn = sqlsrv_connect('LAPTOP-DJ46JC9S', array( "Database"=>"voodle", "UID"=>"voodle", "PWD"=>"KanekiK" ));
+		if ($conn === false) {
+			echo json_encode(array('message' => "Server not Reachable"));
+			exit();
+		}
+		$sql = 'UPDATE questions SET students_crossed += ? WHERE question_no = ? AND session_id = ?';
+		$session = json_decode($_POST['question_data'])[0];
+		$question = json_decode($_POST['question_data'])[1];
+		$stmt = sqlsrv_query($conn, $sql, array($_POST['attempted'], $question, $session));
+		if ($stmt == false) {
+			echo json_encode(array('message' => "Server Error"));
 			exit();
 		}
 	}

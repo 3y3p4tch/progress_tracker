@@ -1,24 +1,24 @@
 <?php
 // for logout
-// if (isset($_GET['logout']) && $_GET['logout'] === 'true') {
-// 	setcookie('username','', time() - 3600);
-// 	setcookie('passwd','', time() - 3600);
-// 	session_start();
-// 	session_unset();
-// 	session_destroy();
-// 	header('location: login.php');
-// 	exit();
-// }
+if (isset($_GET['logout']) && $_GET['logout'] === 'true') {
+	setcookie('username','', time() - 3600);
+	setcookie('passwd','', time() - 3600);
+	session_start();
+	session_unset();
+	session_destroy();
+	header('location: login.php');
+	exit();
+}
 
-// session_start();
-// if (!isset($_SESSION['username']) || !isset($_SESSION['userID'])) {
-// 	header('Location: login.php');
-// 	exit();
-// }
+session_start();
+if (!isset($_SESSION['username']) || !isset($_SESSION['userID'])) {
+	header('Location: login.php');
+	exit();
+}
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 	if(isset($_POST['update_sidebar'])) {
 		$client_time = $_POST['update_sidebar'];
-		$conn = sqlsrv_connect('localhost', array( "Database"=>"voodle", "UID"=>"SA", "PWD"=>"Manaswi0411" ));
+		$conn = sqlsrv_connect('LAPTOP-DJ46JC9S', array( "Database"=>"voodle", "UID"=>"voodle", "PWD"=>"KanekiK" ));
 		if ($conn === false) {
 			echo json_encode(array('message' => "Server not Reachable"));
 			exit();
@@ -38,7 +38,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 	}
 
 	if (isset($_POST['update_charts'])) {
-		$conn = sqlsrv_connect('localhost', array( "Database"=>"voodle", "UID"=>"SA", "PWD"=>"Manaswi0411" ));
+		$conn = sqlsrv_connect('LAPTOP-DJ46JC9S', array( "Database"=>"voodle", "UID"=>"voodle", "PWD"=>"KanekiK" ));
 		if ($conn === false) {
 			echo json_encode(array('message' => "Server not Reachable"));
 			exit();
@@ -51,7 +51,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 		}
 		$chckpt = array();
 		while( $row = sqlsrv_fetch_array( $stmt) ) {
-			array_push($chckpt, array('students_checkpoint' => $row['no_of_students'], 'comments' => $row['comments']));
+			array_push($chckpt, array('students_checkpoint' => $row['students_crossed'], 'comments' => $row['comments']));
 		}
 		$sql = "SELECT pings.LDAP, name, message FROM pings INNER JOIN questions ON pings.ques_id = questions.ques_id INNER JOIN students ON students.LDAP = pings.LDAP WHERE questions.session_id = ?";
 		$stmt = sqlsrv_query($conn, $sql, array($_SESSION['id']));
@@ -93,7 +93,6 @@ $_SESSION['id'] = $_GET['identifier'];
 	<link href="https://fonts.googleapis.com/css?family=Cinzel+Decorative|Josefin+Slab:400,700|Quicksand:400,700" rel="stylesheet">
 	<link rel="stylesheet" type="text/css" media="screen" href="results.css" />
 	<script src='./assets/chart_module/chart.js/dist/Chart.js'></script>
-    <script data-require="bootstrap" data-semver="3.3.6" src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js"></script>
 	<script src="results.js"></script>
 </head>
 
@@ -161,6 +160,43 @@ $_SESSION['id'] = $_GET['identifier'];
 			    <canvas id="hist"></canvas>
 			</div>
 			<script>
+				var myChart = new Chart($('#hist'), {
+					type: 'bar',
+					data: {
+						labels: [],
+						datasets: [{
+							label: 'Number of Students',
+							data: [],
+							backgroundColor: [
+								'rgba(255, 99, 132, 0.2)',
+								'rgba(54, 162, 235, 0.2)',
+								'rgba(255, 206, 86, 0.2)',
+								'rgba(75, 192, 192, 0.2)',
+								'rgba(153, 102, 255, 0.2)',
+								'rgba(255, 159, 64, 0.2)'
+							],
+							borderColor: [
+								'rgba(255,99,132,1)',
+								'rgba(54, 162, 235, 1)',
+								'rgba(255, 206, 86, 1)',
+								'rgba(75, 192, 192, 1)',
+								'rgba(153, 102, 255, 1)',
+								'rgba(255, 159, 64, 1)'
+							],
+							borderWidth: 1
+						}]
+					},
+					options: {
+						scales: {
+							yAxes: [{
+								ticks: {
+									beginAtZero:true,
+									callback: function(value) {if (value % 1 === 0) {return value;}}
+								}
+							}]
+						}
+					}
+				});
 				function data_update() {
 					$.ajax({
 						type: 'POST',
@@ -171,95 +207,36 @@ $_SESSION['id'] = $_GET['identifier'];
 							if ('message' in response)
 								console.log(response['message']);
 							else {
-								console.log(response);
 								$('#students_online').html(response['online']);
-								var labels = [];
-								var data=[];
-								for(var i in response.checkpoint_comments) {
-									labels.push("Ques " + i);
+								var data = [];
+								for(var i = 0; i < response.checkpoint_comments.length; i++) {
 									data.push(response.checkpoint_comments[i].students_checkpoint);
 								}
-								var myChart = new Chart($('#hist'), {
-									type: 'bar',
-									data: {
-										labels: labels,
-										datasets: [{
-											label: 'Number of Students',
-											data: data,
-											backgroundColor: [
-												'rgba(255, 99, 132, 0.2)',
-												'rgba(54, 162, 235, 0.2)',
-												'rgba(255, 206, 86, 0.2)',
-												'rgba(75, 192, 192, 0.2)',
-												'rgba(153, 102, 255, 0.2)',
-												'rgba(255, 159, 64, 0.2)'
-											],
-											borderColor: [
-												'rgba(255,99,132,1)',
-												'rgba(54, 162, 235, 1)',
-												'rgba(255, 206, 86, 1)',
-												'rgba(75, 192, 192, 1)',
-												'rgba(153, 102, 255, 1)',
-												'rgba(255, 159, 64, 1)'
-											],
-											borderWidth: 1
-										}]
-									},
-									options: {
-										scales: {
-											yAxes: [{
-												ticks: {
-													beginAtZero:true,
-													callback: function(value) {if (value % 1 === 0) {return value;}}
-												}
-											}]
-										}
-									}
-								});
-
-
+								myChart.data.datasets[0].data = data;
+								myChart.update();
 							}
 						}
 					});
 				};
 				var refresh = setInterval(data_update, 1000);
-				data_update();
-				// var myChart = new Chart($('#hist'), {
-				// 	type: 'bar',
-				// 	data: {
-				// 		labels: ["Red", "Blue", "Yellow", "Green", "Purple", "Orange"],
-				// 		datasets: [{
-				// 			label: '# of Votes',
-				// 			data: [12, 19, 3, 5, 2, 3],
-				// 			backgroundColor: [
-				// 				'rgba(255, 99, 132, 0.2)',
-				// 				'rgba(54, 162, 235, 0.2)',
-				// 				'rgba(255, 206, 86, 0.2)',
-				// 				'rgba(75, 192, 192, 0.2)',
-				// 				'rgba(153, 102, 255, 0.2)',
-				// 				'rgba(255, 159, 64, 0.2)'
-				// 			],
-				// 			borderColor: [
-				// 				'rgba(255,99,132,1)',
-				// 				'rgba(54, 162, 235, 1)',
-				// 				'rgba(255, 206, 86, 1)',
-				// 				'rgba(75, 192, 192, 1)',
-				// 				'rgba(153, 102, 255, 1)',
-				// 				'rgba(255, 159, 64, 1)'
-				// 			],
-				// 			borderWidth: 1
-				// 		}]
-				// 	},
-				// 	options: {
-				// 		scales: {
-				// 			yAxes: [{
-				// 				ticks: {
-				// 					beginAtZero:true
-				// 				}
-				// 			}]
-				// 		}
-				// 	}
-				// });
+				$.ajax({
+					type: 'POST',
+					url: <?php echo "'".$_SERVER['PHP_SELF']."'";?>,
+					data: 'update_charts',
+					success: function(msg) {
+						var response = JSON.parse(msg);
+						if ('message' in response)
+							console.log(response['message']);
+						else {
+							$('#students_online').html(response['online']);
+							var labels = [];
+							for(var i = 0; i < response.checkpoint_comments.length; i++) {
+								labels.push("Ques "+(i+1));
+							}
+							myChart.data.labels = labels;
+						}
+					}
+				})
 			</script>
 		</div>
 	</div>
