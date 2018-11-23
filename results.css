@@ -137,6 +137,7 @@ body {
     flex-wrap: wrap;
 }
 #comments > div {
+    max-width: 100%;
     flex-grow: 1;
     margin: 4px;
     flex-basis: 300px;
@@ -157,7 +158,7 @@ body {
 }
 #comments ul {
     display: flex;
-    flex-direction: column;
+    flex-direction: column-reverse;
     list-style-type: none;
     margin: 0;
     padding: 0;
@@ -168,23 +169,44 @@ body {
 }
 #comments li {
     padding: 8px 4px;
-    white-space: pre-wrap;
     width: 90%;
     box-sizing: border-box;
+}
+#comments li.instructor {
+    align-self: flex-end;
 }
 #comments li .c_comment {
     display: block;
     width: 100%;
     background-color: white;
     border-radius: 0 0 4px 4px;
-    padding-top: 10px;
+    padding: 10px 8px 4px;
+    box-sizing: border-box;
+    overflow-wrap: break-word;
+    white-space: pre-wrap;
 }
-#comments li .c_ldap {
+#comments li .c_header {
     display: block;
     background-color: white;
     color: purple;
     border-radius: 4px 4px 0 0;
     font-size: small;
+    display: flex;
+    justify-content: space-between;
+    padding: 4px 8px;
+    font-weight: 800;
+}
+#comments li.instructor > * {
+    background-color: #ddd;
+}
+#comments li .c_ldap {
+    color: purple;
+}
+#comments li.instructor .c_ldap {
+    color: dodgerblue;
+}
+#comments li .c_time {
+    color: deepskyblue;
 }
 #comments textarea {
     width: 100%;
@@ -195,4 +217,6 @@ body {
     resize: none;
     padding: 4px;
     border-radius: inherit;
+    border-radius: 4px;
 }
+

@@ -53,7 +53,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 		while( $row = sqlsrv_fetch_array( $stmt) ) {
 			array_push($chckpt, array('students_checkpoint' => $row['students_crossed'], 'comments' => json_decode($row['comments'])));
 		}
-		$sql = "SELECT pings.LDAP, name, message FROM pings INNER JOIN questions ON pings.ques_id = questions.ques_id INNER JOIN students ON students.LDAP = pings.LDAP WHERE questions.session_id = ?";
+		$sql = "SELECT pings.LDAP, [name], [message], question_no FROM pings INNER JOIN questions ON pings.ques_id = questions.ques_id INNER JOIN students ON students.LDAP = pings.LDAP WHERE questions.session_id = ?";
 		$stmt = sqlsrv_query($conn, $sql, array($_SESSION['id']));
 		if ($stmt === false) {
 			echo '{"message": "Server Error"}';
@@ -160,13 +160,55 @@ $_SESSION['id'] = $_GET['identifier'];
 			    <canvas id="hist"></canvas>
 			</div>
 			<div id='comments' style='display: flex'></div>
+			<div class="chart-container" style="position: relative">
+			    <canvas id="pinghist"></canvas>
+			</div>
+			<div id='ping-messages' style='display: flex'></div>
 			<script>
 				var myChart = new Chart($('#hist'), {
 					type: 'bar',
 					data: {
 						labels: [],
 						datasets: [{
-							label: 'Number of Students',
+							label: 'Number of Students Crossed',
+							data: [],
+							backgroundColor: [
+								'rgba(255, 99, 132, 0.2)',
+								'rgba(54, 162, 235, 0.2)',
+								'rgba(255, 206, 86, 0.2)',
+								'rgba(75, 192, 192, 0.2)',
+								'rgba(153, 102, 255, 0.2)',
+								'rgba(255, 159, 64, 0.2)'
+							],
+							borderColor: [
+								'rgba(255,99,132,1)',
+								'rgba(54, 162, 235, 1)',
+								'rgba(255, 206, 86, 1)',
+								'rgba(75, 192, 192, 1)',
+								'rgba(153, 102, 255, 1)',
+								'rgba(255, 159, 64, 1)'
+							],
+							borderWidth: 1
+						}]
+					},
+					options: {
+						scales: {
+							yAxes: [{
+								ticks: {
+									beginAtZero:true,
+									callback: function(value) {if (value % 1 === 0) {return value;}}
+								}
+							}]
+						}
+					}
+				});
+
+				var mypingChart = new Chart($('#pinghist'), {
+					type: 'bar',
+					data: {
+						labels: [],
+						datasets: [{
+							label: 'Number of Students Pinged',
 							data: [],
 							backgroundColor: [
 								'rgba(255, 99, 132, 0.2)',
@@ -214,8 +256,12 @@ $_SESSION['id'] = $_GET['identifier'];
 								labels.push("Ques "+(i+1));
 							}
 							myChart.data.labels = labels;
+							mypingChart.data.labels = labels;
 							for (var i = 0; i < len; i++) {
-								$('#comments').append('<div><button onclick="$(this).next().toggle()">Comments on Question '+(i+1)+'</button><div><ul ques="'+i+'" style="display: flex"></ul><div style="display: flex; flex-direction: row"><textarea style="flex-grow: 1" placeholder="Comment here"></textarea><i class="fa fa-paper-plane" style="padding: 8px; font-size: larger; cursor: pointer" onclick="$(this).prev().val(\'\')" aria-hidden="true"></i></div></div></div>');
+								$('#comments').append('<div><button onclick="$(this).next().toggle()">Comments on Question '+(i+1)+'</button><div><ul ques="'+i+'" style="display: flex"></ul><div style="display: flex; flex-direction: row"><textarea style="flex-grow: 1" placeholder="Comment here"></textarea><i class="fa fa-paper-plane" style="padding: 8px; font-size: larger; cursor: pointer" onclick="post_comment($(this))" aria-hidden="true"></i></div></div></div>');
+							}
+							for( var i = 0;i<len ; i++) {
+								$('#ping-messages').append('<div><button onclick="$(this).next().toggle()">Pings on Question '+(i+1)+'</button><div><ul ques="'+i+'" style="display: flex"></ul><div style="display: flex; flex-direction: row"></div></div></div>');
 							}
 						}
 					}
@@ -233,24 +279,57 @@ $_SESSION['id'] = $_GET['identifier'];
 								var len = response.checkpoint_comments.length;
 								$('#students_online').html(response['online']);
 								var data = [];
+								var pingdata = [];
+								for(var i=0;i<len;i++){
+									pingdata.push(0);
+								}
 								for(var i = 0; i < len; i++) {
 									data.push(response.checkpoint_comments[i].students_checkpoint);
 								}
+								for(var i = 0;i < response.pings.length; i++) {
+									pingdata[response.pings[i].question_no - 1] += 1;
+								}
 								myChart.data.datasets[0].data = data;
+								mypingChart.data.datasets[0].data = pingdata;
+								mypingChart.update();
 								myChart.update();
 								for(var i = 0; i < len; i++) {
 								var comments = response.checkpoint_comments[i].comments;
 								$('#comments ul[ques='+i+']').empty();
-									for(var j = 0; j < comments.length; j++) {
-										$('#comments ul[ques='+i+']').append('<li><span class="c_ldap">'+comments[j]['ldap']+'</span><span class="c_comment">'+comments[j]['comment']+'</span></li>');
+									for(var j = comments.length - 1; j >= 0; j--) {
+										if (comments[j]['ldap'] == 1)
+											$('#comments ul[ques='+i+']').append('<li class="instructor"><div class="c_header"><span class="c_ldap">'+"You"+'</span><span class="c_time">'+comments[j]['time']+'</span></div><span class="c_comment">'+comments[j]['comment']+'</span></li>');
+										else
+											$('#comments ul[ques='+i+']').append('<li><div class="c_header"><span class="c_ldap">'+comments[j]['ldap']+'</span><span class="c_time">'+comments[j]['time']+'</span></div><span class="c_comment">'+comments[j]['comment']+'</span></li>');
 									}
 								}
+								for(var i = 0;i< response.pings.length ; i++){
+									var ping = response.pings[i];
+									var question_no = response.pings[i].question_no-1;
+									$('#ping-messages ul[ques='+question_no+']').append('<li><span class="c_ldap">'+ping['LDAP']+'</span><span class="c_comment">'+ping['message']+'</span></li>');
+								} 
+ 
+
 							}
 						}
 					});
 				};
 				var refresh = setInterval(data_update, 1000);
 				data_update();
+
+				function post_comment(post_icon) {
+					var textarea = post_icon.prev();
+					if (textarea.val())
+					$.ajax({
+						type: 'POST',
+						url: './student_interface.php',
+						data: {'who': JSON.stringify([<?php echo $_SESSION['id']; ?>, parseInt(textarea.parent().prev().attr('ques')) + 1]), 'comment': JSON.stringify({'ldap': 1, 'comment': textarea.val()})},
+						success: function(msg) {
+							textarea.val('');
+							console.log(msg);
+						}
+					})
+				}
 			</script>
 		</div>
 	</div>

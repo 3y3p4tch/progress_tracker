@@ -54,10 +54,12 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 			exit();
 		}
 		$sql = "UPDATE questions SET comments = JSON_MODIFY(comments, 'append $', JSON_QUERY(?)) WHERE session_id = ? AND question_no = ?";
-		$stmt = sqlsrv_query($conn, $sql, array($_POST['comment'], $id, $ques_no));
+		var_dump($id);
+		$comment = json_decode($_POST['comment']);
+		$comment->time = date('H:i');
+		$stmt = sqlsrv_query($conn, $sql, array(json_encode($comment), $id, $ques_no));
 		if ($stmt == false) {
-			// echo json_encode(array('message' => "Server Error"));
-			var_dump(sqlsrv_errors());
+			echo json_encode(array('message' => "Server Error"));
 			exit();
 		}
 		echo '{"done": 1}';
