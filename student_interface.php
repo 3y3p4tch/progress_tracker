@@ -54,7 +54,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 			exit();
 		}
 		$sql = "UPDATE questions SET comments = JSON_MODIFY(comments, 'append $', JSON_QUERY(?)) WHERE session_id = ? AND question_no = ?";
-		var_dump($id);
 		$comment = json_decode($_POST['comment']);
 		$comment->time = date('H:i');
 		$stmt = sqlsrv_query($conn, $sql, array(json_encode($comment), $id, $ques_no));
@@ -139,6 +138,51 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 		$session = json_decode($_POST['question_data'])[0];
 		$question = json_decode($_POST['question_data'])[1];
 		$stmt = sqlsrv_query($conn, $sql, array($_POST['attempted'], $question, $session));
+		if ($stmt == false) {
+			echo json_encode(array('message' => "Server Error"));
+			exit();
+		}
+		echo '{"done": 1}';
+	}
+	else if (isset($_POST['who']) && isset($_POST['ldap'])) {
+		$id = json_decode($_POST['who'])[0];
+		$ques_no = json_decode($_POST['who'])[1];
+		$conn = sqlsrv_connect('LAPTOP-DJ46JC9S', array( "Database"=>"voodle", "UID"=>"voodle", "PWD"=>"KanekiK" ));
+		if ($conn === false) {
+			echo json_encode(array('message' => "Server not Reachable"));
+			exit();
+		}
+		$sql = "SELECT LDAP, [message], CONVERT(nvarchar, [time], 8) AS [time] FROM pings INNER JOIN questions ON pings.ques_id = questions.ques_id WHERE (LDAP = ? OR LDAP = 1) AND questions.question_no = ? AND session_id = ? AND reply_to = ? ORDER BY [time]";
+		$stmt = sqlsrv_query($conn, $sql, array($_POST['ldap'], $ques_no, $id, $_POST['ldap']));
+		if ($stmt == false) {
+			echo json_encode(array('message' => "Server Error"));
+			exit();
+		}
+		$answer = array();
+		while ($row = sqlsrv_fetch_array($stmt)) {
+			array_push($answer, $row);
+		}
+		echo json_encode($answer);
+	}
+	else if (isset($_POST['who']) && isset($_POST['ping'])) {
+		$id = json_decode($_POST['who'])[0];
+		$ques_no = json_decode($_POST['who'])[1];
+		$ldap = json_decode($_POST['ping'])->ldap;
+		$msg = json_decode($_POST['ping'])->comment;
+		$to;
+		if (!isset($_POST['to'])) {
+			$to = $ldap;
+		}
+		else {
+			$to = $_POST['to'];
+		}
+		$conn = sqlsrv_connect('LAPTOP-DJ46JC9S', array( "Database"=>"voodle", "UID"=>"voodle", "PWD"=>"KanekiK" ));
+		if ($conn === false) {
+			echo json_encode(array('message' => "Server not Reachable"));
+			exit();
+		}
+		$sql = "INSERT INTO pings (ques_id, LDAP, [message], reply_to) VALUES ((SELECT ques_id FROM questions WHERE question_no = ? AND session_id = ?), ?, ?, ?)";
+		$stmt = sqlsrv_query($conn, $sql, array($ques_no, $id, $ldap, $msg, $to));
 		if ($stmt == false) {
 			echo json_encode(array('message' => "Server Error"));
 			exit();

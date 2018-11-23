@@ -130,33 +130,34 @@ body {
     overflow: auto;
     flex-grow: 1;
 }
-
-#comments {
+#comments, #ping-messages {
     display: flex;
     flex-direction: row;
     flex-wrap: wrap;
 }
-#comments > div {
+#comments > div, #ping-messages > div {
     max-width: 100%;
     flex-grow: 1;
     margin: 4px;
     flex-basis: 300px;
     position: relative;
 }
-#comments button {
+#comments button, #ping-messages button {
     background-color: orangered;
     padding: 8px;
     border: none;
     outline: none;
     width: 100%;
     border-radius:4px 4px;
+    cursor: pointer;
+    color: whitesmoke;
 }
-#comments > div > div {
+#comments > div > div , #ping-messages > div > div {
     background-color: #eee;
     border-radius: 0 0 4px 4px;
     display: none;
 }
-#comments ul {
+#comments ul ,#ping-messages ul, #modal ul {
     display: flex;
     flex-direction: column-reverse;
     list-style-type: none;
@@ -167,15 +168,15 @@ body {
     height: 400px;
     overflow: auto;
 }
-#comments li {
+#comments li ,#ping-messages li, #modal li {
     padding: 8px 4px;
     width: 90%;
     box-sizing: border-box;
 }
-#comments li.instructor {
+#comments li.instructor, #ping-messages li.instructor, #modal li.instructor {
     align-self: flex-end;
 }
-#comments li .c_comment {
+#comments li .c_comment, #ping-messages li .c_comment, #modal li .c_comment {
     display: block;
     width: 100%;
     background-color: white;
@@ -185,7 +186,7 @@ body {
     overflow-wrap: break-word;
     white-space: pre-wrap;
 }
-#comments li .c_header {
+#comments li .c_header, #ping-messages li .c_header, #modal li .c_header {
     display: block;
     background-color: white;
     color: purple;
@@ -196,19 +197,19 @@ body {
     padding: 4px 8px;
     font-weight: 800;
 }
-#comments li.instructor > * {
+#comments li.instructor > *, #ping-messages li.instructor > * {
     background-color: #ddd;
 }
-#comments li .c_ldap {
+#comments li .c_ldap, #ping-messages li .c_ldap {
     color: purple;
 }
-#comments li.instructor .c_ldap {
+#comments li.instructor .c_ldap, #ping-messages li.instructor .c_ldap {
     color: dodgerblue;
 }
-#comments li .c_time {
+#comments li .c_time, #ping-messages li .c_time, #modal .c_time {
     color: deepskyblue;
 }
-#comments textarea {
+textarea {
     width: 100%;
     overflow: hidden;
     border: 1px solid #888;
@@ -220,3 +221,62 @@ body {
     border-radius: 4px;
 }
 
+/* modal */
+#modal {
+    display: none; /* Hidden by default */
+    position: fixed; /* Stay in place */
+    z-index: 1; /* Sit on top */
+    padding-top: 100px; /* Location of the box */
+    left: 0;
+    top: 0;
+    width: 100%; /* Full width */
+    height: 100%; /* Full height */
+    overflow: auto; /* Enable scroll if needed */
+    background-color: rgb(0,0,0); /* Fallback color */
+    background-color: rgba(0,0,0,0.4); /* Black w/ opacity */
+}
+
+/* Modal Content */
+#modal-content {
+    background-color: #fefefe;
+    margin: auto;
+    padding: 20px;
+    border: 1px solid #888;
+    width: 80%;
+}
+
+/* The Close Button */
+#close {
+    color: #aaaaaa;
+    float: right;
+    font-size: 28px;
+    font-weight: bold;
+}
+
+#close:hover,
+#close:focus {
+    color: #000;
+    text-decoration: none;
+    cursor: pointer;
+}
+#ping-messages li {
+    cursor: pointer;
+}
+.fa-paper-plane {
+    padding: 8px;
+    font-size: larger;
+    cursor: pointer;
+}
+
+#modal li > * {
+    background-color: #eee !important;
+}
+#modal li.instructor > * {
+    background-color: #333 !important;
+}
+#modal li.instructor .c_comment {
+    color: #c5e1a5;
+}
+#modal li.instructor .c_time {
+    color: #bbdefb !important;
+}

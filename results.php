@@ -53,7 +53,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 		while( $row = sqlsrv_fetch_array( $stmt) ) {
 			array_push($chckpt, array('students_checkpoint' => $row['students_crossed'], 'comments' => json_decode($row['comments'])));
 		}
-		$sql = "SELECT pings.LDAP, [name], [message], question_no FROM pings INNER JOIN questions ON pings.ques_id = questions.ques_id INNER JOIN students ON students.LDAP = pings.LDAP WHERE questions.session_id = ?";
+		$sql = "SELECT pings.LDAP, [name], [message], question_no, CONVERT(nvarchar, [time], 8) AS [time] FROM pings INNER JOIN questions ON pings.ques_id = questions.ques_id INNER JOIN students ON students.LDAP = pings.LDAP WHERE questions.session_id = ? AND pings.LDAP != 1";
 		$stmt = sqlsrv_query($conn, $sql, array($_SESSION['id']));
 		if ($stmt === false) {
 			echo '{"message": "Server Error"}';
@@ -155,7 +155,22 @@ $_SESSION['id'] = $_GET['identifier'];
 		setInterval(update_sidebar, 2000);
 		</script>
 		<div id='site'>
-			<span id='students_online'></span>
+			<div id="modal">
+				<div id="modal-content">
+					<span id="close">&times;</span>
+					<ul></ul>
+					<div style='display: flex; flex-direction: row'>
+						<textarea placeholder="Reply here"></textarea><i class='fa fa-paper-plane' onclick='post_ping($(this))'></i>
+					</div>
+				</div>
+			</div>
+			<div style='color: #8bc34a;font-size: x-large;text-align: right;'>
+				<div style='display: inline-block; background-color: #000; border-radius: 8px; padding: 8px 16px'>
+					<span>Number of Students online:</span>
+					<span id='students_online'></span>
+					<i class='fas fa-feather-alt'></i>
+				</div>
+			</div>
 			<div class="chart-container" style="position: relative">
 			    <canvas id="hist"></canvas>
 			</div>
@@ -164,6 +179,25 @@ $_SESSION['id'] = $_GET['identifier'];
 			    <canvas id="pinghist"></canvas>
 			</div>
 			<div id='ping-messages' style='display: flex'></div>
+			<script>
+				// When the user clicks on <span> (x), close the modal
+				$('#close').on('click', function() {
+					$('#modal').css('display', 'none');
+					clearInterval(refresh);
+					refresh = setInterval(data_update, 1000);
+					data_update();
+				});
+
+				// When the user clicks anywhere outside of the modal, close it
+				$('#modal').on('click', function(event) {
+					if (event.target == this) {
+						$(this).css('display', 'none');
+						clearInterval(refresh);
+						refresh = setInterval(data_update, 1000);
+						data_update();
+					}
+				});
+			</script>
 			<script>
 				var myChart = new Chart($('#hist'), {
 					type: 'bar',
@@ -198,7 +232,15 @@ $_SESSION['id'] = $_GET['identifier'];
 									beginAtZero:true,
 									callback: function(value) {if (value % 1 === 0) {return value;}}
 								}
+							}],
+							xAxes: [{
+								categoryPercentage: 1.0,
+								barPercentage: 1.0
 							}]
+						},
+						tooltips: {
+							intersect: false,
+							mode: 'index'
 						}
 					}
 				});
@@ -236,7 +278,15 @@ $_SESSION['id'] = $_GET['identifier'];
 									beginAtZero:true,
 									callback: function(value) {if (value % 1 === 0) {return value;}}
 								}
+							}],
+							xAxes: [{
+								categoryPercentage: 1.0,
+								barPercentage: 1.0
 							}]
+						},
+						tooltips: {
+							intersect: false,
+							mode: 'index'
 						}
 					}
 				});
@@ -258,7 +308,7 @@ $_SESSION['id'] = $_GET['identifier'];
 							myChart.data.labels = labels;
 							mypingChart.data.labels = labels;
 							for (var i = 0; i < len; i++) {
-								$('#comments').append('<div><button onclick="$(this).next().toggle()">Comments on Question '+(i+1)+'</button><div><ul ques="'+i+'" style="display: flex"></ul><div style="display: flex; flex-direction: row"><textarea style="flex-grow: 1" placeholder="Comment here"></textarea><i class="fa fa-paper-plane" style="padding: 8px; font-size: larger; cursor: pointer" onclick="post_comment($(this))" aria-hidden="true"></i></div></div></div>');
+								$('#comments').append('<div><button onclick="$(this).next().toggle()">Comments on Question '+(i+1)+'</button><div><ul ques="'+i+'" style="display: flex"></ul><div style="display: flex; flex-direction: row"><textarea style="flex-grow: 1" placeholder="Comment here"></textarea><i class="fa fa-paper-plane" onclick="post_comment($(this))" aria-hidden="true"></i></div></div></div>');
 							}
 							for( var i = 0;i<len ; i++) {
 								$('#ping-messages').append('<div><button onclick="$(this).next().toggle()">Pings on Question '+(i+1)+'</button><div><ul ques="'+i+'" style="display: flex"></ul><div style="display: flex; flex-direction: row"></div></div></div>');
@@ -280,11 +330,10 @@ $_SESSION['id'] = $_GET['identifier'];
 								$('#students_online').html(response['online']);
 								var data = [];
 								var pingdata = [];
-								for(var i=0;i<len;i++){
-									pingdata.push(0);
-								}
+
 								for(var i = 0; i < len; i++) {
 									data.push(response.checkpoint_comments[i].students_checkpoint);
+									pingdata.push(0);
 								}
 								for(var i = 0;i < response.pings.length; i++) {
 									pingdata[response.pings[i].question_no - 1] += 1;
@@ -303,10 +352,35 @@ $_SESSION['id'] = $_GET['identifier'];
 											$('#comments ul[ques='+i+']').append('<li><div class="c_header"><span class="c_ldap">'+comments[j]['ldap']+'</span><span class="c_time">'+comments[j]['time']+'</span></div><span class="c_comment">'+comments[j]['comment']+'</span></li>');
 									}
 								}
-								for(var i = 0;i< response.pings.length ; i++){
+								for(var i=0; i<len; i++){
+									$('#ping-messages ul[ques='+i+']').empty();
+								}
+								for(var i = response.pings.length - 1; i >= 0; i--){
 									var ping = response.pings[i];
 									var question_no = response.pings[i].question_no-1;
-									$('#ping-messages ul[ques='+question_no+']').append('<li><span class="c_ldap">'+ping['LDAP']+'</span><span class="c_comment">'+ping['message']+'</span></li>');
+									$('#ping-messages ul[ques='+question_no+']').append('<li title="Reply to '+ping['LDAP']+'"><div class="c_header"><span class="c_ldap">'+ping['LDAP']+'</span><span class="c_time">'+ping['time']+'</span></div><span class="c_comment">'+ping['message']+'</span></li>');
+									// Get the modal
+									var modal = $('#modal');
+
+									// Get the <span> element that closes the modal
+									var span = $('#close');
+
+									var btn = $('#ping-messages ul > li');
+
+									btn.on('click', function() {
+										var who = $(this).children().children().html();
+										var ques = $(this).parent().attr('ques');
+										if (who == 'You') {
+											return;
+										}
+										console.log($(this).html());
+										modal.attr('ques', ques);
+										modal.attr('who', who);
+										modal.css('display', 'block');
+										clearInterval(refresh);
+										refresh = setInterval(function () {fetch_pings(ques, who);}, 1000);
+										fetch_pings(ques, who);
+									})
 								} 
  
 
@@ -326,7 +400,38 @@ $_SESSION['id'] = $_GET['identifier'];
 						data: {'who': JSON.stringify([<?php echo $_SESSION['id']; ?>, parseInt(textarea.parent().prev().attr('ques')) + 1]), 'comment': JSON.stringify({'ldap': 1, 'comment': textarea.val()})},
 						success: function(msg) {
 							textarea.val('');
+						}
+					})
+				}
+
+				function post_ping(post_icon) {
+					var textarea = post_icon.prev();
+					if (textarea.val())
+					$.ajax({
+						type: 'POST',
+						url: './student_interface.php',
+						data: {'who': JSON.stringify([<?php echo $_SESSION['id']; ?>, parseInt($('#modal').attr('ques')) + 1]), 'ping': JSON.stringify({'ldap': 1, 'comment': textarea.val()}), 'to': $('#modal').attr('who')},
+						success: function(msg) {
 							console.log(msg);
+							textarea.val('');
+						}
+					})
+				}
+
+				function fetch_pings(ques_no, ldap) {
+					$.ajax({
+						type: 'POST',
+						url: './student_interface.php',
+						data: {'who': JSON.stringify([<?php echo $_SESSION['id']; ?>, parseInt($('#modal').attr('ques')) + 1]), 'ldap': ldap},
+						success: function(msg) {
+							var response = JSON.parse(msg);
+							$('#modal ul').empty();
+							for(var i = response.length - 1; i >= 0; i--) {
+								if (response[i]['LDAP'] == 1)
+									$('#modal ul').append('<li class="instructor"><div class="c_header"><span class="c_time">'+response[i]['time']+'</span></div><span class="c_comment">'+response[i]['message']+'</span></li>');
+								else 
+									$('#modal ul').append('<li><div class="c_header"><span class="c_time">'+response[i]['time']+'</span></div><span class="c_comment">'+response[i]['message']+'</span></li>');
+							}
 						}
 					})
 				}
