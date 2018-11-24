@@ -280,3 +280,6 @@ textarea {
 #modal li.instructor .c_time {
     color: #bbdefb !important;
 }
+#s_name {
+    font-family: 'josefin slab';
+}

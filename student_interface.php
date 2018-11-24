@@ -111,9 +111,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 		$session = json_decode($_POST['question_data'])[0];
 		$ldap = json_decode($_POST['question_data'])[1];
 		$conn = sqlsrv_connect('LAPTOP-DJ46JC9S', array( "Database"=>"voodle", "UID"=>"voodle", "PWD"=>"KanekiK" ));
-		if ($_POST['active'] == 0) {
+		if ($_POST['active'] == -1) {
 			$sql = 'UPDATE students SET [session] = NULL WHERE ldap = ?';
-			$stmt = sqlsrv_query($conn, $sql, array(ldap));
+			$stmt = sqlsrv_query($conn, $sql, array($ldap));
 			if ($stmt == false) {
 				echo json_encode(array('message' => "Server Error"));
 				exit();

@@ -73,7 +73,17 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 		if ( $row = sqlsrv_fetch_array( $stmt) ) {
 			$students = $row[0];
 		}
-		echo json_encode(array('online' => $students, 'checkpoint_comments' => $chckpt, 'pings' => $pings));
+		$sql = "SELECT session_name FROM sessions_ WHERE session_id = ?";
+		$stmt = sqlsrv_query($conn, $sql, array($_SESSION['id']));
+		if ($stmt === false) {
+			echo '{"message": "Server Error"}';
+			exit();
+		}
+		$name;
+		if ( $row = sqlsrv_fetch_array( $stmt) ) {
+			$name = $row[0];
+		}
+		echo json_encode(array('name' => $name, 'online' => $students, 'checkpoint_comments' => $chckpt, 'pings' => $pings));
 		exit();
 	}
 }
@@ -164,8 +174,9 @@ $_SESSION['id'] = $_GET['identifier'];
 					</div>
 				</div>
 			</div>
-			<div style='color: #8bc34a;font-size: x-large;text-align: right;'>
-				<div style='display: inline-block; background-color: #000; border-radius: 8px; padding: 8px 16px'>
+			<div style='font-size: x-large; display: flex; flex-direction: row; justify-content: space-between'>
+				<span id='s_name'></span>
+				<div style='color: #8bc34a; background-color: #000; border-radius: 8px; padding: 8px 16px'>
 					<span>Number of Students online:</span>
 					<span id='students_online'></span>
 					<i class='fas fa-feather-alt'></i>
@@ -301,6 +312,7 @@ $_SESSION['id'] = $_GET['identifier'];
 						else {
 							var len = response.checkpoint_comments.length;
 							$('#students_online').html(response['online']);
+							$('#s_name').html(response['name']);
 							var labels = [];
 							for(var i = 0; i < len; i++) {
 								labels.push("Ques "+(i+1));
